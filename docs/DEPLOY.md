@@ -22,28 +22,16 @@ cp .env.example .env
 |------------|------------|
 | `VITE_APP_ENV` | `local` / `staging` / `production` |
 | `VITE_PERSIST_LOCAL_DB` | `false` на сервере (не писать снимок БД в sessionStorage) |
-| `DATABASE_URL` | Postgres для миграций / backup |
-| `VITE_SUPABASE_*` | когда подключите hosted Supabase |
+| `VITE_SUPABASE_*` | опционально, если подключите Supabase |
 
-Секреты (`SUPABASE_SERVICE_ROLE_KEY`, пароли БД) **не** коммитить.
+Секреты (`SUPABASE_SERVICE_ROLE_KEY`) **не** коммитить.
 
-## Подготовка БД
+## Подготовка БД (опционально)
 
 ```bash
-# 1. Пересобрать seed из TypeScript (идемпотентно)
 npm run seed:sql
-
-# 2a. Docker Postgres (локально / staging)
-npm run docker:db
-# → localhost:5432, user/db mt, password change-me
-
-# 2b. Или Supabase CLI
-# supabase db reset   # migrations + seed из config.toml
-
-# 2c. Или ручной psql
-psql "$DATABASE_URL" -f supabase/migrations/001_schema.sql
-psql "$DATABASE_URL" -f supabase/migrations/002_app_auth.sql
-for f in supabase/seed/00*.sql; do psql "$DATABASE_URL" -f "$f"; done
+npm run docker:db          # локальный Postgres + migrations + seed
+# или: supabase db reset
 ```
 
 Файлы `*.dev.sql` содержат тестовые учётки — **не** накатывать на боевой прод без смены паролей.
@@ -66,6 +54,26 @@ npm run docker:up
 ```
 
 HTTPS — на reverse proxy перед контейнером.
+
+## Dokploy
+
+1. **Application** → Git-репозиторий проекта.  
+2. **Build Type** = `Dockerfile`.  
+3. **Dockerfile path** = `Dockerfile` (корень репо).  
+4. **Docker context** = `.`  
+5. **Port** = `80` (при создании домена тоже 80).  
+6. **Build Arguments** (не runtime env — Vite вшивает на сборке):
+
+```text
+VITE_APP_ENV=production
+VITE_PERSIST_LOCAL_DB=false
+VITE_SUPABASE_URL=
+VITE_SUPABASE_ANON_KEY=
+```
+
+7. Deploy. Healthcheck: `GET /healthz` → `ok`.
+
+Файлы: корневой `Dockerfile`, nginx — `docker/nginx.dokploy.conf`, игнор контекста — `.dockerignore`.
 
 ## sessionStorage / localStorage
 

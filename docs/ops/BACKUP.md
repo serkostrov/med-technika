@@ -17,14 +17,14 @@
 После переноса на Supabase/Postgres:
 
 ```bash
-# БД
-pg_dump -Fc -f backups/db-$(date +%F).dump "$DATABASE_URL"
+# БД (подставьте URL своего Postgres / Supabase)
+pg_dump -Fc -f backups/db-$(date +%F).dump "postgresql://…"
 
 # Storage buckets: protocol-sources, protocol-scans, fgis-exports
 # (копирование объектами cloud tool / rclone)
 
 # Restore drill (ежемесячно)
-pg_restore --clean --if-exists -d "$DATABASE_URL" backups/db-YYYY-MM-DD.dump
+pg_restore --clean --if-exists -d "postgresql://…" backups/db-YYYY-MM-DD.dump
 ```
 
 Cron пример (host):

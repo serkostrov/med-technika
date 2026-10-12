@@ -45,7 +45,6 @@ npm run seed:sql
 ```bash
 npm run seed:sql
 npm run docker:db          # Postgres 16 + migrations + seed
-# DATABASE_URL=postgresql://mt:change-me@127.0.0.1:5432/med_technique
 ```
 
 Или:
@@ -79,7 +78,10 @@ npm run docker:up
 # http://localhost:8080
 ```
 
-HTTPS — на внешнем reverse proxy.
+**Dokploy:** Build Type = Dockerfile, path `Dockerfile`, context `.`, port `80`.  
+Подробнее: [DEPLOY.md](DEPLOY.md#dokploy).
+
+HTTPS — на внешнем reverse proxy / Dokploy.
 
 ## Backup / restore
 
