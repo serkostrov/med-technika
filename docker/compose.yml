@@ -1,0 +1,44 @@
+services:
+  web:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+      args:
+        VITE_APP_ENV: production
+        VITE_PERSIST_LOCAL_DB: "false"
+    ports:
+      - "8080:80"
+    restart: unless-stopped
+
+  # Postgres — целевой контур (migrations + seed).
+  # Запуск: npm run docker:db
+  db:
+    profiles: ["db", "full"]
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-med_technique}
+      POSTGRES_USER: ${POSTGRES_USER:-mt}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-change-me}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ../supabase/migrations/001_schema.sql:/docker-entrypoint-initdb.d/01_schema.sql:ro
+      - ../supabase/migrations/002_app_auth.sql:/docker-entrypoint-initdb.d/02_app_auth.sql:ro
+      - ../supabase/seed/001_settings.sql:/docker-entrypoint-initdb.d/11_settings.sql:ro
+      - ../supabase/seed/002_staff.sql:/docker-entrypoint-initdb.d/12_staff.sql:ro
+      - ../supabase/seed/003_units.sql:/docker-entrypoint-initdb.d/13_units.sql:ro
+      - ../supabase/seed/004_measurement_kinds.sql:/docker-entrypoint-initdb.d/14_kinds.sql:ro
+      - ../supabase/seed/005_oa.sql:/docker-entrypoint-initdb.d/15_oa.sql:ro
+      - ../supabase/seed/006_protocol_forms.sql:/docker-entrypoint-initdb.d/16_forms.sql:ro
+      - ../supabase/seed/007_form_indicator_maps.sql:/docker-entrypoint-initdb.d/17_maps.sql:ro
+      - ../supabase/seed/008_auth_accounts.dev.sql:/docker-entrypoint-initdb.d/18_auth.dev.sql:ro
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
+volumes:
+  pgdata:

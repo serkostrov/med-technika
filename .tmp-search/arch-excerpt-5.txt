@@ -1,0 +1,294 @@
+## Вердикт по текущему состоянию
+
+Проект — чистый каркас **Vite + React 19 + TypeScript**. Доменного кода, Supabase, Tailwind/shadcn, парсера и миграций нет. ТЗ v1.0 (04.10.2026) — единственный источник требований; ниже — план, совместимый с ним.
+
+---
+
+## 1. Архитектура и целевая структура репозитория
+
+**Стек (ТЗ §3):** React/TS/Vite + shadcn/ui/Tailwind · Supabase self-hosted (Postgres, Auth, Storage, Edge Functions) · Nginx/HTTPS · разбор Excel в Edge Function · XML в Edge Function.
+
+```
+med-technique/
+├── apps/web/                      # фронт (или корень src/ — как удобнее стартовать)
+│   ├── src/
+│   │   ├── app/                   # роутинг, layout, auth guard
+│   │   ├── pages/                 # login, registry, upload, protocol, export, dictionaries, users/settings
+│   │   ├── features/              # UI-фичи по модулям (без бизнес-правил на клиенте)
+│   │   ├── shared/                # ui (shadcn), lib, types
+│   │   └── integrations/supabase/ # клиент, typed RPC
+│   └── ...
+├── supabase/
+│   ├── migrations/                # DDL, RLS, RPC, triggers
+│   ├── functions/
+│   │   ├── parse-protocol/
+│   │   └── build-fgis-xml/
+│   ├── seed/                      # виды, формы, map ОА, unit_conversions, settings
+│   └── config.toml
+├── packages/ (опционально)
+│   ├── domain/                    # типы статусов, коды проверок, контракты JSON парсера
+│   └── fact-value/                # decimal.js + unit-тесты §6.6 (общие для edge/тестов)
+├── tests/
+│   ├── unit/                      # FactValue, нормализация, unit_conversions
+│   ├── parser/                    # эталонные xlsx → JSON
+│   ├── checks/                    # E01–E15, W01–W07 на подготовленных файлах
+│   └── xml/                       # канонизация + сверка с эталоном
+├── docker/                        # compose: supabase + nginx + front
+├── docs/ops/                      # бэкап/restore (README)
+└── fixtures/                      # эталоны из «XML_и_протоколы_к_ним» (не в публичный git без нужды)
+```
+
+**Принципы (жёстко из ТЗ):**
+- RLS везде; права только через `is_head()` / `is_engineer()` / `current_staff_id()`.
+- Смена `status` — только RPC §14; прямой `update status` запрещён.
+- Аудит — триггеры, не фронт.
+- Парсер/XML/проверки — сервер; фронт скрывает кнопки, но не является границей безопасности.
+
+---
+
+## 2. Функциональные модули
+
+| Модуль | Содержание по ТЗ | Где живёт |
+|---|---|---|
+| **Авторизация и пользователи** | email/пароль, без саморегистрации; head создаёт учётки; привязка к `staff` | Auth + UI «Пользователи» |
+| **Роли и права** | `head` / `engineer`; матрица §5; RLS | Postgres RLS + security definer |
+| **Реестр протоколов** | колонки, фильтры, быстрые фильтры, счётчики, пагинация §11 | UI + views/RPC |
+| **Загрузка Excel** | DnD multi-file, SHA-256, Storage `protocol-sources`, дедуп, replace §6.1/6.7 | UI + Storage + `protocol_save`/`replace` |
+| **Определение формы** | лист ↔ `protocol_forms`, служебные листы, суффиксы, выбор листа §6.2 | `parse-protocol` |
+| **Разбор шапки** | якоря в A, нормализация, поля §6.3 | профили/общий header-parser |
+| **Разбор результатов** | профили (`physio-bb`, `physio-df`, …) §6.4; статус формы | registry профилей в edge |
+| **Сопоставление со справочниками** | заказчик, СИ, staff, ОА, единицы §7 | UI «требует сопоставления» + RPC |
+| **Проверки и ФЛК** | `protocol_run_checks`, E/W, severity_overrides §8 | SQL function |
+| **Утверждение** | ack warnings, approve/return §9 | RPC + UI вкладка «Проверка» |
+| **Сканы PDF** | Storage `protocol-scans`, лимит, триггер ready §9.1 | RPC `protocol_attach_scan` |
+| **XML ФГИС** | правила §10.2, XSD, DataStatusId=20 | `build-fgis-xml` |
+| **Пакетные выгрузки** | ≤100, история, mark uploaded §10.1 | UI «Выгрузка» + RPC |
+| **Справочники** | ОА, staff, equipment, units, customers, forms, FSA optional §12 | UI + import RPC; SheetJS в браузере |
+| **Аудит** | `audit_log` триггерами §13 | DB triggers |
+| **Настройки** | `settings` key/jsonb §4, §12 | UI head-only |
+| **Тестирование** | §6.6, §18, эталоны App. A | `tests/` + CI |
+| **Развёртывание и бэкап** | Docker, HTTPS, pg_dump+Storage, 14 дней §16 | `docker/`, ops docs |
+
+---
+
+## 3. Сущности и связи
+
+```
+auth.users 1──1? staff (app_role; fgis ids; post; roles[])
+                    │
+customers ◄──────── protocols ──► protocol_forms ──► measurement_kinds
+   │                   │                │
+   │                   ├── protocol_objects
+   │                   ├── protocol_results ──► oa_items ◄── oa_editions (current|extension)
+   │                   │         │                    ▲
+   │                   │         └── form_indicator_map (form_id, source_key → oa_item + ub)
+   │                   ├── protocol_equipment ──► equipment ──► equipment_verifications
+   │                   ├── protocol_issues
+   │                   └── staff (engineer / uploaded_by / approved_by)
+   │
+units ◄── unit_conversions
+settings (lab_address_id, approver_staff_id, recalc_tolerance, severity_overrides, max sizes)
+fgis_exports ── fgis_export_items ── protocols
+audit_log (entity, entity_id, action, actor, diff)
+fsa_* (опционально)
+```
+
+Ключевой инвариант: **`protocols.raw`** = полный JSON парсера; нормализованные таблицы — рабочая проекция для UI/проверок/XML. **`source_path` + `source_sha256`** — неизменяемый оригинал.
+
+---
+
+## 4. Жизненный цикл протокола
+
+```
+[upload+save] → review
+      │
+      │ protocol_approve (head; нет active error; все active warning ack)
+      ▼
+   approved
+      │
+      │ auto: scan PDF + application_date заполнены
+      ▼
+    ready ──► exported (включён в build-fgis-xml)
+                  │
+                  ▼
+                sent (export_mark_uploaded)
+```
+
+| Переход | Кто / как |
+|---|---|
+| → `review` | загрузка; любая правка §6.8 в `approved`/`ready`; `protocol_return` |
+| → `approved` | только `protocol_approve` |
+| → `ready` | автоматически при `approved` + скан + `application_date` |
+| → `exported` | `build-fgis-xml` |
+| → `sent` | `export_mark_uploaded` |
+| soft-delete | до `exported`; после — запрет |
+
+Повторный выбор `exported` в пакет — разрешён (предупреждение). После выгрузки replace файла по номеру+дате — запрет (ФЛК 5).
+
+---
+
+## 5. Источник истины / запреты / откат / роли / серверные проверки
+
+### Источник истины
+- **Измерения, FactValue, U, шапка из Excel** — исходный `.xlsx` (сохранённые значения + `number_format`); пересчёт на сервере только для W02, **в XML всегда FactValue из протокола**.
+- **ОА, EquipmentId, idFullName, единицы** — справочники ФГИС/клиента.
+- **Текст методики/показателя в XML** — из ОА, не из протокола.
+- **Статус и журнал** — БД (RPC + триггеры).
+- **Передача во ФГИС** — ручная отметка (API ФГИС вне scope).
+
+### Нельзя редактировать в системе
+- Сырые замеры, среднее Excel, U Excel, FactValue, номер/дата из файла, условия из файла и т.п. — только новый Excel + replace.
+- Исходный файл в Storage — immutable.
+- Enum-значения — только расширять.
+
+### Правки, разрешённые в карточке (§6.8)
+`application_date`, `accred_scope_353`, даты измерений для 26-ИДК; привязки customer/equipment/staff/oa; `include_in_xml` с комментарием.
+
+### Автовозврат в `review`
+Любая правка через `protocol_update` / смена сопоставлений / include в статусе **`approved` или `ready`** → сброс утверждения, `status = review`. (После `exported`/`sent` замена файла запрещена; правка доменных полей, ведущая к повторной выгрузке, должна оставаться совместимой с ТЗ — фактически выгрузка уже свершилась; повторный export возможен для `exported`.)
+
+### Начальник ИЛ
+Загрузка; все протоколы; правки §6.8; ack; approve/return; скан; XML + mark uploaded; delete до export; CRUD/import справочников; пользователи/настройки; весь журнал.
+
+### Инженер
+Загрузка; только свои (`uploaded_by` или `engineer_staff_id`); правки/ack/скан/delete(review) по своим; чтение справочников; создание заказчика при загрузке; журнал по своим. **Нет:** approve, return, XML, mark uploaded, правка справочников (кроме customer create), пользователи/настройки.
+
+### Обязательно серверные
+- RLS и все смены статуса.
+- `parse-protocol`, FactValue, пересчёт uA/uB/U.
+- `protocol_run_checks` (после save/update и при изменении справочников для review/approved/ready).
+- `protocol_approve` / `return` / `attach_scan` / `delete` / `build-fgis-xml` / `export_mark_uploaded`.
+- XSD-валидация; лимит 100; дедуп SHA-256; unique (number, date).
+- Аудит-триггеры.
+
+Клиент: предпросмотр импорта справочников (SheetJS), UX, скрытие кнопок.
+
+---
+
+## 6. Все места `[УТОЧНИТЬ]` и безопасная архитектура
+
+Правило: **конфиг/данные/профиль**, не hardcoded ветки в ядре. Гипотеза из ТЗ — default; смена — seed/settings/форма без переписывания пайплайна.
+
+| # | Место | Гипотеза ТЗ | Безопасная точка расширения |
+|---|---|---|---|
+| 1 | Суффиксы номера (РК, ЭД, МК…) §6.2 | по имени шаблона | `measurement_kinds.suffix` + таблица/поле `protocol_forms.number_suffix_rules` |
+| 2 | Даты измерений 26-ИДК §6.3 | ручной ввод | флаг в `protocol_forms.settings.manual_measure_dates` |
+| 3 | Якорь «Протокол оформил» отсутствует §6.3 | поиск по профилю | `parser_profile` + optional `engineer_locator` в settings формы |
+| 4 | FactValue: суффиксы/% в number_format §6.6 | уточнить | стратегия форматтера в `packages/fact-value` + таблица тест-кейсов |
+| 5 | Лимит размера пакетного XML §10.1 | без лимита + warning | `settings.max_export_file_bytes` (null = без лимита) |
+| 6 | `AccredScope353` в XML §10.2 | выводить только если true | XML emitter: feature flag `emit_accred_scope_353` |
+| 7 | TypeObjectId для произв./окруж. среды §10.2 | справочник DM-52863 | `protocol_forms.type_object_id` (уже в модели) |
+| 8 | Directory для не-продукции §10.2 | вероятно DM-53535 | `protocol_forms.fgis_directory` |
+| 9 | DocNameId vs UniqueMethod при id методики §10.2 | гипотеза DocNameId | `settings.xml_method_emit_mode` = `doc_name_id` \| `unique_method` \| `auto` |
+| 10 | Conditions в XML §10.2 | нет в эталонах физ.; уточнить | `protocol_forms.settings.emit_conditions` + маппинг на DM-54873 |
+| 11 | Листы «Дети_», «Прил. МУК…» — форма или приложение §19 | не решать в коде ядра | `form_status` / отдельная форма vs `settings.ignore_sheets` |
+| 12 | W01: error или warning §19 | сейчас warning | `settings.severity_overrides` (`{"W01":"error"}`) — уже в DDL |
+| 13 | Заказчики ИП/ФЛ §19 | kind 2/4 | `customers.kind_id` + условная валидация в E13/E14 |
+| 14 | Профили без BB:BE — что в FactValue §6.4 | только по эталонному XML | форма остаётся `no_materials`/`in_progress` до XML; профиль не в `ready` |
+| 15 | uB для НЧ и прочих 26-МТ §6.5 | снять из BH | `form_indicator_map.ub` per indicator |
+
+Открытые вопросы §19 ведёт Сергей; разработчик не пишет клиенту.
+
+---
+
+## 7. Прямо исключено из проекта (§1.4)
+
+- Учёт заявок, назначение исполнителей, печать бланков РП  
+- OCR рукописных бланков/фото  
+- Ввод замеров в системе, расчёт/генерация протокола PDF/Excel  
+- Отправка во ФГИС через API или статус «Отправлен» (13) — только черновик (20) + ручная отметка  
+- Уведомления о поверке, рассылки, 1С, данные из ПО аппаратов  
+- Новые/изменённые шаблоны после передачи — отдельное соглашение  
+
+---
+
+## 8. Dependency map
+
+```
+[1 Auth/Users] ──► [2 Roles/RLS]
+                         │
+                         ▼
+              [3 Settings + Dictionaries seed/import]
+                         │
+         ┌───────────────┼───────────────┐
+         ▼               ▼               ▼
+   [4 Form registry] [5 Matching]   [Storage buckets]
+         │               │
+         ▼               │
+   [6 Excel upload] ─────┤
+         │               │
+         ▼               ▼
+   [7 Form detect + Header parse]
+         │
+         ▼
+   [8 Result profiles] ──► [9 FactValue + recalc]
+         │
+         ▼
+   [10 Checks/FLK] ──► [11 Approve + Scan → ready]
+                              │
+                              ▼
+                        [12 XML + Batch export]
+                              │
+                              ▼
+              [13 Registry UX] [14 Audit]  (частично параллельно с 10–12)
+                              │
+                              ▼
+              [15 Remaining profiles] ──► [16 Deploy/Backup/Training]
+```
+
+Критический путь ядра (промежуточная демонстрация по ТЗ §17 п.1–6):  
+**Infra/RLS → справочники → physio-bb/df + FactValue → checks/approve/scan → XML сверка → реестр/выгрузки/журнал.**
+
+---
+
+## 9. План на 10 этапов
+
+| Этап | Что реализуем | Зависит от | Тесты | Критерий готовности |
+|---|---|---|---|---|
+| **1. Инфра + схема + Auth** | Docker/Supabase local, миграции DDL §4, RLS §5, staff↔users, settings seed, buckets | — | RLS: engineer не видит чужие; прямой update status forbidden | Оба пользователя входят; RLS покрыт автотестом |
+| **2. Справочники и импорт** | UI/RPC ОА (2 редакции), staff, equipment, units+conversions, customers CRUD | этап 1 | импорт 278 позиций; id/«id отсутствует» | Данные клиента загружены |
+| **3. Каркас UI + реестр (read)** | layout RU/MSK, login, реестр с фильтрами (пустые данные ок), типы статусов | 1 | фильтры/пагинация с RLS | Экран реестра и навигация по ТЗ §15 |
+| **4. Парсер ядра** | `parse-protocol`: detect form, header, physio-bb, physio-df; upload+SHA; save/replace; parse log UI | 1–2, form seed | 3 эталона: 9/5/10 результатов; hash dedup; «не распознан» | Разбор без ручных правок полей измерений |
+| **5. FactValue + пересчёт** | decimal.js pipeline §6.6; uA/uB/U; W02; `parser_version` | 4 | 10 кейсов §6.6; допуск vs BF/BJ | Unit-тесты зелёные до приёмки |
+| **6. Сопоставления** | customer/SI/staff/OA map; seed §7.4; remember map; include_in_xml | 2, 4 | Эталон-Мед/мед; E03/E04/E06 | Сопоставления эталонов автоматические или в 1 клик |
+| **7. Проверки + утверждение + скан** | `protocol_run_checks` E/W; ack; approve/return; PDF; auto ready; patch→review | 5–6 | каждый E01–E15, W01–W07; approve blocked with error | Кейсы §18 по проверкам/статусам |
+| **8. XML + пакеты** | `build-fgis-xml`, XSD, stream base64, ≤100, history, mark sent; preview без Content | 7 | эталон = наш XML (без Content); пакет 100; нельзя 101 | Автотест сверки зелёный |
+| **9. Реестр/журнал/настройки полный контур** | счётчики, быстрые фильтры, audit tab, users/settings, FSA optional | 3, 7–8 | журнал событий §18; фильтр «не передано» | Ядро §17 п.1–6 готово к промежуточной встрече |
+| **10. Остальные профили + деплой** | формы App. Б по материалам; статусы forms; deploy HTTPS; backup 14d; обучение; user doc | 8–9 + материалы клиента | per-form parse; XML где есть эталон; restore drill | Акт; формы без материалов — `no_materials`, срок по договору |
+
+Этапы 4–8 соответствуют критическому пути; 9 усиливает продукт; 10 — расширение профилей и приёмка у клиента.
+
+---
+
+## 10. Соответствие модулей из запроса → этапы
+
+| Модуль | Этапы |
+|---|---|
+| Авторизация и пользователи | 1, 9 |
+| Роли и права | 1 |
+| Реестр | 3, 9 |
+| Загрузка Excel | 4 |
+| Определение формы / шапка / результаты | 4, 10 |
+| Сопоставление | 6 |
+| Проверки и ФЛК | 7 |
+| Утверждение | 7 |
+| Сканы PDF | 7 |
+| XML ФГИС / пакеты | 8 |
+| Справочники | 2 |
+| Аудит | 1 (триггеры), 9 (UI) |
+| Настройки | 1, 9 |
+| Тестирование | непрерывно 4–8, 10 |
+| Развёртывание и бэкап | 1 (local), 10 (prod) |
+
+---
+
+## 11. Риски, уже заложенные в ТЗ (не «придумывать»)
+
+- ~72 формы; без заполненного протокола **и** XML профиль не в `ready`.  
+- Ядро — три эталона (УВЧ, МТ/НЧ, ДФ).  
+- Размер пакета со сканами — до 200+ МБ → потоковая сборка.  
+- Срок 2 месяца; нехватка материалов продлевает сроки (п.3.2, 4.2.1 договора).
+
+---
+
+Дальше логичный следующий шаг без «массового кода»: согласовать этот план и начать **этап 1** (миграции + RLS + Auth + скелет compose). Код писать не начинал — жду подтверждения, с какого этапа стартовать.

@@ -1,0 +1,123 @@
+-- Generated from src/data/seed/oa.ts
+
+INSERT INTO oa_editions (id, title, kind, is_active, source_file, loaded_at) VALUES
+  ('22222222-2222-4222-8222-222222222201', 'Действующая ОА', 'current', TRUE, NULL, '2026-10-04T00:00:00.000Z')
+ON CONFLICT (id) DO UPDATE SET
+  title = EXCLUDED.title,
+  kind = EXCLUDED.kind,
+  is_active = EXCLUDED.is_active,
+  source_file = EXCLUDED.source_file,
+  loaded_at = EXCLUDED.loaded_at;
+
+INSERT INTO oa_items (
+  id, edition_id, item_no, methodik_text, methodik_fgis_id,
+  method_text, method_fgis_id, object_type, indicator_text, indicator_fgis_id,
+  unit_text, unit_fgis_id, range_text, range_min, range_max,
+  is_calculated, object_name, deleted_at
+) VALUES
+  (
+    '22222222-2222-4222-8222-222222222211',
+    '22222222-2222-4222-8222-222222222201',
+    '1.10.',
+    'ГОСТ 28603-90, п.3.3-3.9',
+    NULL,
+    'Прочие исследования…',
+    1140,
+    'Продукция',
+    'Выходная мощность',
+    '126477',
+    'Вт',
+    '42',
+    NULL,
+    NULL,
+    NULL,
+    FALSE,
+    NULL,
+    NULL
+  ),
+  (
+    '22222222-2222-4222-8222-222222222212',
+    '22222222-2222-4222-8222-222222222201',
+    '1.10.',
+    'ГОСТ 28603-90, п.3.3-3.9',
+    NULL,
+    'Прочие исследования…',
+    1140,
+    'Продукция',
+    'Рабочая частота',
+    '130912',
+    'Гц',
+    '68',
+    NULL,
+    NULL,
+    NULL,
+    FALSE,
+    NULL,
+    NULL
+  ),
+  (
+    '22222222-2222-4222-8222-222222222213',
+    '22222222-2222-4222-8222-222222222201',
+    '1.48.',
+    'ГОСТ 28603-90, п.3.3-3.9',
+    NULL,
+    'Прочие исследования…',
+    1140,
+    'Продукция',
+    'Сила тока',
+    '215',
+    'мА',
+    '716',
+    NULL,
+    NULL,
+    NULL,
+    FALSE,
+    NULL,
+    NULL
+  ),
+  (
+    '22222222-2222-4222-8222-222222222214',
+    '22222222-2222-4222-8222-222222222201',
+    '1.51.',
+    '—',
+    NULL,
+    NULL,
+    NULL,
+    'Продукция',
+    'Энергия высоковольтного импульса',
+    NULL,
+    'Дж',
+    '58',
+    NULL,
+    NULL,
+    NULL,
+    FALSE,
+    NULL,
+    NULL
+  ),
+  (
+    '22222222-2222-4222-8222-222222222215',
+    '22222222-2222-4222-8222-222222222201',
+    '1.52.',
+    '—',
+    NULL,
+    NULL,
+    NULL,
+    'Продукция',
+    'Интервал времени',
+    '122822',
+    'с',
+    '96',
+    NULL,
+    NULL,
+    NULL,
+    FALSE,
+    NULL,
+    NULL
+  )
+ON CONFLICT (id) DO UPDATE SET
+  edition_id = EXCLUDED.edition_id,
+  item_no = EXCLUDED.item_no,
+  indicator_text = EXCLUDED.indicator_text,
+  unit_text = EXCLUDED.unit_text,
+  unit_fgis_id = EXCLUDED.unit_fgis_id;

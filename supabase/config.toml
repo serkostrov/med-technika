@@ -1,0 +1,64 @@
+# Supabase local / linked project config (CLI).
+# Secrets → .env (never commit real keys).
+
+project_id = "med-technique"
+
+[api]
+enabled = true
+port = 54321
+schemas = ["public", "storage"]
+extra_search_path = ["public", "extensions"]
+max_rows = 1000
+
+[db]
+port = 54322
+major_version = 15
+
+[db.migrations]
+enabled = true
+
+[db.seed]
+enabled = true
+# Order matters. *.dev.sql — только local/staging (тестовые пароли).
+sql_paths = [
+  "./seed/001_settings.sql",
+  "./seed/002_staff.sql",
+  "./seed/003_units.sql",
+  "./seed/004_measurement_kinds.sql",
+  "./seed/005_oa.sql",
+  "./seed/006_protocol_forms.sql",
+  "./seed/007_form_indicator_maps.sql",
+  "./seed/008_auth_accounts.dev.sql",
+]
+
+[studio]
+enabled = true
+port = 54323
+
+[auth]
+enabled = true
+site_url = "http://localhost:5173"
+additional_redirect_urls = ["http://localhost:5173"]
+enable_signup = false
+
+[storage]
+enabled = true
+file_size_limit = "100MiB"
+
+[storage.buckets.protocol-sources]
+public = false
+file_size_limit = "100MiB"
+allowed_mime_types = [
+  "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+  "application/vnd.ms-excel",
+]
+
+[storage.buckets.protocol-scans]
+public = false
+file_size_limit = "100MiB"
+allowed_mime_types = ["application/pdf"]
+
+[storage.buckets.fgis-exports]
+public = false
+file_size_limit = "50MiB"
+allowed_mime_types = ["application/xml", "text/xml"]
