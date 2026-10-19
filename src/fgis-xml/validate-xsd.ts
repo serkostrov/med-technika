@@ -17,8 +17,8 @@ export function validateAgainstFgisXsd(xml: string): XsdValidationResult {
   if (!xml.startsWith('<?xml version="1.0" encoding="utf-8"?>')) {
     errors.push('Ожидается заголовок UTF-8: <?xml version="1.0" encoding="utf-8"?>')
   }
-  if (!/<Protocols>/.test(xml) || !/<\/Protocols>/.test(xml)) {
-    errors.push('Корневой элемент Protocols обязателен')
+  if (!/<root>/.test(xml) || !/<\/root>/.test(xml)) {
+    errors.push('Корневой элемент root обязателен')
   }
 
   const protocols = [...xml.matchAll(/<protocol>([\s\S]*?)<\/protocol>/g)]

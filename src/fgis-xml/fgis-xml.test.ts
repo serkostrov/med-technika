@@ -106,8 +106,8 @@ describe('FGIS XML (§10.2)', () => {
   })
 
   it('канонизация игнорирует Content и порядок Equipment', () => {
-    const a = `<Protocols><protocol><Equipment><EquipmentDetails><EquipmentId>2</EquipmentId></EquipmentDetails><EquipmentDetails><EquipmentId>1</EquipmentId></EquipmentDetails></Equipment><ProtocolScan><Content>AAA</Content></ProtocolScan></protocol></Protocols>`
-    const b = `<Protocols><protocol><Equipment><EquipmentDetails><EquipmentId>1</EquipmentId></EquipmentDetails><EquipmentDetails><EquipmentId>2</EquipmentId></EquipmentDetails></Equipment><ProtocolScan><Content>BBB</Content></ProtocolScan></protocol></Protocols>`
+    const a = `<root><protocol><Equipment><EquipmentDetails><EquipmentId>2</EquipmentId></EquipmentDetails><EquipmentDetails><EquipmentId>1</EquipmentId></EquipmentDetails></Equipment><ProtocolScan><Content>AAA</Content></ProtocolScan></protocol></root>`
+    const b = `<root><protocol><Equipment><EquipmentDetails><EquipmentId>1</EquipmentId></EquipmentDetails><EquipmentDetails><EquipmentId>2</EquipmentId></EquipmentDetails></Equipment><ProtocolScan><Content>BBB</Content></ProtocolScan></protocol></root>`
     expect(canonicalizeFgisXml(a)).toBe(canonicalizeFgisXml(b))
   })
 })

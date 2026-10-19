@@ -351,13 +351,16 @@ export function buildReferenceDfXlsx(): ArrayBuffer {
   setCell(sheet, r, 0, 'Протокол оформил:')
   setCell(sheet, r++, 20, 'Судницын А.В.')
 
+  /** Как в боевом шаблоне: объект → заголовок блока в Y → строки измерений. */
   const addEnergy = (
     label: string,
-    objectLine: string,
+    objectLine: string | null,
     values: { set: string; y: number; fmt: string; raw: [number, number, number, number] }[],
   ) => {
-    setCell(sheet, r++, 0, label)
-    setCell(sheet, r++, 0, objectLine)
+    if (objectLine) setCell(sheet, r++, 0, objectLine)
+    setCell(sheet, r, COL.A, 'Установленные параметры работы для проведения измерений')
+    setCell(sheet, r, COL.Y, label)
+    r++
     for (const v of values) {
       setCell(sheet, r, COL.A, v.set)
       setCell(sheet, r, COL.Y, v.y, v.fmt)
@@ -381,7 +384,7 @@ export function buildReferenceDfXlsx(): ArrayBuffer {
   )
   addEnergy(
     'Результаты измерений энергии высоковольтного импульса при амплитуде импульса от 2 до 8 кВ',
-    '1. Дефибриллятор: PRIMEDIC Defi-B, зав.№ D1, 2015 г.',
+    null,
     [
       { set: '70', y: 70, fmt: '0', raw: [70, 70, 70, 70] },
       { set: '120', y: 119, fmt: 'General', raw: [119, 119, 119, 119] },
@@ -391,9 +394,15 @@ export function buildReferenceDfXlsx(): ArrayBuffer {
       { set: '280', y: 280, fmt: '0', raw: [280, 280, 280, 280] },
     ],
   )
-  setCell(sheet, r++, 0, 'Результаты измерений интервала времени, с')
-  setCell(sheet, r++, 0, '1. Дефибриллятор: PRIMEDIC Defi-B, зав.№ D1, 2015 г.')
-  setCell(sheet, r, COL.A, 'интервал')
+  setCell(
+    sheet,
+    r,
+    COL.A,
+    'Установленные параметры работы (набор энергии) для проведения измерений',
+  )
+  setCell(sheet, r, COL.Y, 'Результаты измерений интервала времени, с')
+  r++
+  setCell(sheet, r, COL.A, '360 (время набора энергии не более 7 с)*')
   setCell(sheet, r, COL.Y, 9.350000000000001, '0.0')
   setCell(sheet, r, COL.BB, 9.3)
   setCell(sheet, r, COL.BC, 9.4)

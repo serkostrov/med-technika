@@ -15,16 +15,28 @@ const OBJECT_RE =
 
 type BlockKey = 'energy_le2kv' | 'energy_2_8kv' | 'interval'
 
+/**
+ * Заголовок блока в реальных протоколах лежит в Y (merged A…X / Y…AK),
+ * в упрощённых фикстурах — в A. Смотрим обе колонки.
+ */
 function detectBlock(text: string): BlockKey | null {
-  const t = text.toLowerCase()
+  const t = text.toLowerCase().replace(/\s+/g, ' ')
   if (!t.includes('результат')) return null
   if (t.includes('интервал')) return 'interval'
-  if (t.includes('до 2') || t.includes('до2')) return 'energy_le2kv'
-  if (t.includes('от 2') || t.includes('2 до 8') || t.includes('до 8')) {
+  // «от 2 … до 8» раньше «до 2»
+  if (t.includes('от 2') || t.includes('2 до 8') || t.includes('до 8 кв')) {
     return 'energy_2_8kv'
   }
+  if (t.includes('до 2') || t.includes('до2')) return 'energy_le2kv'
   if (t.includes('энерг')) return 'energy_le2kv'
   return null
+}
+
+function rowDetectBlock(grid: SheetGrid, r: number): BlockKey | null {
+  return (
+    detectBlock(cellText(grid, r, COL.A)) ??
+    detectBlock(cellText(grid, r, COL.Y))
+  )
 }
 
 function bbBe(grid: SheetGrid, r: number): number[] | null {
@@ -56,13 +68,14 @@ export function parsePhysioDf(
 
   for (let r = 0; r <= grid.maxRow; r++) {
     const a = cellText(grid, r, COL.A)
-    if (!a) continue
-
-    const block = detectBlock(a)
+    const block = rowDetectBlock(grid, r)
     if (block) {
       currentBlock = block
-      continue
+      // объект может стоять строкой выше заголовка блока (боевые шаблоны ДФ)
+      if (!a || !OBJECT_RE.test(a)) continue
     }
+
+    if (!a) continue
 
     const obj = OBJECT_RE.exec(a)
     if (obj) {
@@ -70,7 +83,7 @@ export function parsePhysioDf(
       if (
         prev &&
         !OBJECT_RE.test(prev) &&
-        !detectBlock(prev) &&
+        !rowDetectBlock(grid, r - 1) &&
         !/результат/i.test(prev)
       ) {
         currentDepartment = prev

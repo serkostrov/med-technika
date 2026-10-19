@@ -1,10 +1,12 @@
 /**
  * Минимальная XSD-схема пакета ФГИС по правилам ТЗ §10.2.
+ * Корневой элемент — root (актуальная схема ФГИС Росаккредитации;
+ * историческое имя Protocols отклоняется загрузчиком).
  * Клиентский XSD при появлении заменяет этот файл; валидатор читает sequence отсюда.
  */
 export const FGIS_PROTOCOL_XSD = `<?xml version="1.0" encoding="utf-8"?>
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified">
-  <xs:element name="Protocols">
+  <xs:element name="root">
     <xs:complexType>
       <xs:sequence>
         <xs:element name="protocol" maxOccurs="100" type="ProtocolType"/>

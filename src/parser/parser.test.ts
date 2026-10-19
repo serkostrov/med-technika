@@ -1,3 +1,4 @@
+import { existsSync, readFileSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
 import { createSeedBundle } from '@/data/seed'
 import {
@@ -13,6 +14,11 @@ import {
 } from '@/parser/fixtures/reference-xlsx'
 import { sha256Hex } from '@/parser/hash'
 import { bootstrapServer, SeedCredentials } from '@/server'
+
+const REAL_DF =
+  '/Users/talininigor/Downloads/29-26-ДФ КОГБУЗ Омутнинская ЦРБ.xlsx'
+const REAL_UHF =
+  '/Users/talininigor/Downloads/26-26-УВЧ КОГБУЗ КОКБ Областная.xlsx'
 
 describe('FactValue (§6.6)', () => {
   it.each(FACT_VALUE_CASES)(
@@ -93,7 +99,83 @@ describe('Эталонные протоколы (App. A)', () => {
       '280',
       '9,4',
     ])
+    expect(parsed.results.map((r) => r.sourceKey)).toEqual([
+      'energy_le2kv',
+      'energy_le2kv',
+      'energy_le2kv',
+      'energy_2_8kv',
+      'energy_2_8kv',
+      'energy_2_8kv',
+      'energy_2_8kv',
+      'energy_2_8kv',
+      'energy_2_8kv',
+      'interval',
+    ])
   })
+
+  it.skipIf(!existsSync(REAL_DF))(
+    'боевой 29-26-ДФ: заголовки блоков в Y, 7 результатов',
+    () => {
+      const buf = readFileSync(REAL_DF)
+      const data = buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength)
+      const parsed = parseProtocol({
+        data,
+        forms: seed.protocolForms,
+        indicatorMaps: seed.formIndicatorMaps,
+      })
+      expect(parsed.metadata.number).toBe('29-26-ДФ')
+      expect(parsed.parserProfile).toBe('physio-df')
+      expect(parsed.objects).toHaveLength(1)
+      expect(parsed.results).toHaveLength(7)
+      expect(parsed.results.map((r) => r.sourceKey)).toEqual([
+        'energy_le2kv',
+        'energy_le2kv',
+        'energy_2_8kv',
+        'energy_2_8kv',
+        'energy_2_8kv',
+        'energy_2_8kv',
+        'interval',
+      ])
+      expect(parsed.results.map((r) => r.factValue)).toEqual([
+        '18',
+        '44',
+        '91',
+        '150',
+        '228',
+        '330',
+        '4,0',
+      ])
+    },
+  )
+
+  it.skipIf(!existsSync(REAL_UHF))(
+    'боевой 26-26-УВЧ: 12 результатов (9 мощность + 3 частота)',
+    () => {
+      const buf = readFileSync(REAL_UHF)
+      const data = buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength)
+      const parsed = parseProtocol({
+        data,
+        forms: seed.protocolForms,
+        indicatorMaps: seed.formIndicatorMaps,
+      })
+      expect(parsed.metadata.number).toBe('26-26-УВЧ')
+      expect(parsed.results).toHaveLength(12)
+      expect(parsed.results.map((r) => r.factValue)).toEqual([
+        '6,8',
+        '14,6',
+        '21,8',
+        '8,4',
+        '19,2',
+        '29,6',
+        '14,0',
+        '28,1',
+        '49,0',
+        '26,911',
+        '26,992',
+        '40,745',
+      ])
+    },
+  )
 
   it('неподдерживаемая / пустая книга → ParseError без частичных данных', () => {
     expect(() =>

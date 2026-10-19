@@ -231,6 +231,6 @@ export function emitProtocolXml(ctx: ProtocolXmlContext): string {
 export function wrapProtocolsDocument(protocolXmlChunks: string[]): string {
   return (
     `<?xml version="1.0" encoding="utf-8"?>` +
-    `<Protocols>${protocolXmlChunks.join('')}</Protocols>`
+    `<root>${protocolXmlChunks.join('')}</root>`
   )
 }
