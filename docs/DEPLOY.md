@@ -7,7 +7,7 @@
 | UI | React SPA (`dist/`) | без изменений |
 | Бизнес-логика | portable `SecureApi` в браузере (in-memory) | тот же код на Node/Edge + Postgres |
 | Справочники / seed | TypeScript → **SQL** (`npm run seed:sql`) | Postgres |
-| Персист браузера | `sessionStorage` только в **dev** | в production **выключен** |
+| Персист браузера | `localStorage` (`mt.db.v1`), logout **не** стирает | Postgres API |
 | Файлы | in-memory Maps | Supabase Storage / S3 buckets |
 
 Полный перенос RPC на Postgres — отдельный этап. Этот документ закрывает **миграции, seed, env и выкладку SPA**.
@@ -21,7 +21,7 @@ cp .env.example .env
 | Переменная | Назначение |
 |------------|------------|
 | `VITE_APP_ENV` | `local` / `staging` / `production` |
-| `VITE_PERSIST_LOCAL_DB` | `false` на сервере (не писать снимок БД в sessionStorage) |
+| `VITE_PERSIST_LOCAL_DB` | `true` для portable SPA (данные переживают logout); `false` только с Postgres API |
 | `VITE_SUPABASE_*` | опционально, если подключите Supabase |
 
 Секреты (`SUPABASE_SERVICE_ROLE_KEY`) **не** коммитить.
@@ -40,13 +40,13 @@ npm run docker:db          # локальный Postgres + migrations + seed
 
 ```bash
 export VITE_APP_ENV=production
-export VITE_PERSIST_LOCAL_DB=false
+export VITE_PERSIST_LOCAL_DB=true
 npm ci
 npm run build
 # раздавайте dist/ через Nginx/Caddy (SPA fallback → index.html)
 ```
 
-Docker-образ уже передаёт `VITE_PERSIST_LOCAL_DB=false`:
+Docker-образ по умолчанию передаёт `VITE_PERSIST_LOCAL_DB=true`:
 
 ```bash
 npm run docker:up
@@ -66,7 +66,7 @@ HTTPS — на reverse proxy перед контейнером.
 
 ```text
 VITE_APP_ENV=production
-VITE_PERSIST_LOCAL_DB=false
+VITE_PERSIST_LOCAL_DB=true
 VITE_SUPABASE_URL=
 VITE_SUPABASE_ANON_KEY=
 ```
@@ -77,19 +77,19 @@ VITE_SUPABASE_ANON_KEY=
 
 ## sessionStorage / localStorage
 
-| Ключ | Что | Prod |
-|------|-----|------|
-| `mt.db.v1` | снимок всей in-memory БД | **не пишется** при `VITE_PERSIST_LOCAL_DB=false` |
-| `mt.access_token` | JWT-подобный токен сессии | только в браузере (сессия вкладки) |
-| `mt.session` | email/role/staffId для UI | то же |
+| Ключ | Где | Что |
+|------|-----|-----|
+| `mt.db.v1` | **localStorage** | снимок in-memory БД (справочники, протоколы). Logout **не** удаляет |
+| `mt.access_token` | sessionStorage | токен сессии входа |
+| `mt.session` | sessionStorage | email/role/staffId для UI |
 
-`localStorage` в коде **не используется**.
+`VITE_PERSIST_LOCAL_DB=false` — не писать `mt.db.v1` (только когда появится Postgres API).
 
 ## Checklist перед заливкой
 
 1. [ ] `.env` на сервере без `*.dev` паролей в проде  
 2. [ ] `npm run seed:sql` и миграции накатили на Postgres  
-3. [ ] `VITE_PERSIST_LOCAL_DB=false` в build args  
+3. [ ] `VITE_PERSIST_LOCAL_DB=true` в build args (portable SPA)  
 4. [ ] `npm test && npm run build` зелёные  
 5. [ ] Backup cron по [ops/BACKUP.md](ops/BACKUP.md)  
 6. [ ] Reverse proxy + TLS  

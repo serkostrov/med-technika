@@ -15,6 +15,7 @@ export function getStoredToken(): string | null {
   return sessionStorage.getItem(TOKEN_KEY)
 }
 
+/** Только токены входа. Снимок БД (справочники) не трогает. */
 export function clearSession(): void {
   sessionStorage.removeItem(TOKEN_KEY)
   sessionStorage.removeItem('mt.session')

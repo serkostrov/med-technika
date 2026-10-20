@@ -2,7 +2,7 @@
 
 ## Dev runtime (in-memory Database)
 
-В разработке данные живут в portable слое `src/server/db`. Снимок в `sessionStorage` (`mt.db.v1`) пишется **только если** `VITE_PERSIST_LOCAL_DB` не выключен (в production-сборке по умолчанию выключен).
+В portable SPA данные живут в `src/server/db`. Снимок в `localStorage` (`mt.db.v1`) сохраняется при изменениях и **не удаляется при logout** (сбрасывается только сессия входа).
 
 1. **Создать снимок** — `exportDatabaseSnapshot(db)` → JSON (таблицы + blobs base64).
 2. **Восстановить** — `importDatabaseSnapshot(db, snap)`.

@@ -61,7 +61,7 @@ supabase/seed/*.sql
 
 ```bash
 export VITE_APP_ENV=production
-export VITE_PERSIST_LOCAL_DB=false
+export VITE_PERSIST_LOCAL_DB=true
 npm ci
 npm run build
 npm run preview   # проверка dist на :4173

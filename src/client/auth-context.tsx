@@ -15,7 +15,7 @@ import {
   getStoredToken,
   loginRequest,
 } from '@/client/api'
-import { resetSharedApi } from '@/client/shared-api'
+import { flushPersistSharedDb, resetSharedApi } from '@/client/shared-api'
 
 type Session = {
   email: string
@@ -60,7 +60,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const logout = useCallback(() => {
+    // Сначала сохраняем справочники/протоколы, потом только сессию.
+    flushPersistSharedDb()
     clearSession()
+    // Память сбрасываем, localStorage с данными НЕ трогаем.
     resetSharedApi()
     setSession(null)
   }, [])
@@ -73,6 +76,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
     const me = await fetchMe()
     if (!me) {
+      // Истекла сессия — данные БД оставляем.
       clearSession()
       setSession(null)
       return

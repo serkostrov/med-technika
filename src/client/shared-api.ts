@@ -7,18 +7,23 @@ import {
 } from '@/server/db/backup'
 
 /**
- * Единый in-memory сервер на вкладку браузера (dev / portable SPA).
- * Production: VITE_PERSIST_LOCAL_DB=false — без снимка в sessionStorage;
- * целевое хранилище — Postgres (supabase/migrations + seed).
+ * Единый in-memory сервер на вкладку браузера (portable SPA).
+ * Данные справочников/протоколов хранятся в localStorage и
+ * НЕ сбрасываются при выходе из аккаунта (logout чистит только сессию).
  */
 const PERSIST_KEY = 'mt.db.v1'
+const LEGACY_SESSION_KEY = 'mt.db.v1' // раньше писали в sessionStorage
 
 function persistEnabled(): boolean {
   const flag = import.meta.env.VITE_PERSIST_LOCAL_DB
   if (flag === 'false' || flag === '0') return false
-  if (flag === 'true' || flag === '1') return true
-  // По умолчанию: только вне production-сборки
-  return import.meta.env.MODE !== 'production'
+  // По умолчанию ВКЛЮЧЕНО: без Postgres portable SPA иначе теряет данные.
+  return true
+}
+
+function storage(): Storage | null {
+  if (typeof localStorage === 'undefined') return null
+  return localStorage
 }
 
 let apiPromise: Promise<SecureApi> | null = null
@@ -37,36 +42,93 @@ export function getSharedApi(): Promise<SecureApi> {
   return apiPromise
 }
 
-/** Сохранить снимок БД (dev). В production по умолчанию отключено. */
+function writeSnapshot(db: Database): void {
+  const store = storage()
+  if (!persistEnabled() || !store) return
+  try {
+    const snap = exportDatabaseSnapshot(db)
+    store.setItem(PERSIST_KEY, JSON.stringify(snap))
+    // миграция: убрать устаревший снимок из sessionStorage
+    if (typeof sessionStorage !== 'undefined') {
+      sessionStorage.removeItem(LEGACY_SESSION_KEY)
+    }
+  } catch {
+    /* quota / private mode */
+  }
+}
+
+/** Отложенное сохранение снимка БД. */
 export function persistSharedDb(): void {
-  if (!persistEnabled() || !dbRef || typeof sessionStorage === 'undefined') return
+  if (!persistEnabled() || !dbRef) return
   if (persistTimer) clearTimeout(persistTimer)
   persistTimer = setTimeout(() => {
-    try {
-      const snap = exportDatabaseSnapshot(dbRef!)
-      sessionStorage.setItem(PERSIST_KEY, JSON.stringify(snap))
-    } catch {
-      /* quota / private mode */
-    }
+    persistTimer = null
+    if (dbRef) writeSnapshot(dbRef)
   }, 50)
 }
 
-export function resetSharedApi(): void {
+/** Немедленная запись (перед logout / закрытием вкладки). */
+export function flushPersistSharedDb(): void {
+  if (persistTimer) {
+    clearTimeout(persistTimer)
+    persistTimer = null
+  }
+  if (dbRef) writeSnapshot(dbRef)
+}
+
+/**
+ * Сброс in-memory API.
+ * По умолчанию НЕ трогает localStorage — данные справочников сохраняются.
+ * wipeStorage=true — полный сброс (только явный «сброс демо» / тесты).
+ */
+export function resetSharedApi(options?: { wipeStorage?: boolean }): void {
+  if (persistTimer) {
+    clearTimeout(persistTimer)
+    persistTimer = null
+  }
+  if (!options?.wipeStorage) {
+    flushPersistSharedDb()
+  }
   apiPromise = null
   dbRef = null
-  if (typeof sessionStorage !== 'undefined') {
-    sessionStorage.removeItem(PERSIST_KEY)
+  if (options?.wipeStorage) {
+    storage()?.removeItem(PERSIST_KEY)
+    if (typeof sessionStorage !== 'undefined') {
+      sessionStorage.removeItem(LEGACY_SESSION_KEY)
+    }
   }
 }
 
 function restoreIfPresent(db: Database): void {
-  if (!persistEnabled() || typeof sessionStorage === 'undefined') return
-  const raw = sessionStorage.getItem(PERSIST_KEY)
+  if (!persistEnabled()) return
+  const store = storage()
+  if (!store) return
+
+  let raw = store.getItem(PERSIST_KEY)
+  // Миграция со старого sessionStorage → localStorage
+  if (!raw && typeof sessionStorage !== 'undefined') {
+    raw = sessionStorage.getItem(LEGACY_SESSION_KEY)
+    if (raw) {
+      try {
+        store.setItem(PERSIST_KEY, raw)
+      } catch {
+        /* ignore */
+      }
+      sessionStorage.removeItem(LEGACY_SESSION_KEY)
+    }
+  }
   if (!raw) return
   try {
     const snap = JSON.parse(raw) as DatabaseSnapshot
     importDatabaseSnapshot(db, snap)
   } catch {
-    sessionStorage.removeItem(PERSIST_KEY)
+    store.removeItem(PERSIST_KEY)
   }
+}
+
+/** Для beforeunload — дописать снимок, если есть незаписанный таймер. */
+if (typeof window !== 'undefined') {
+  window.addEventListener('pagehide', () => {
+    flushPersistSharedDb()
+  })
 }

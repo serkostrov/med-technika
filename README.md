@@ -29,7 +29,7 @@ Seed-учётки (локальный bootstrap): `head@il.local` / `head-test-p
 - React 19 + TypeScript + Vite
 - Portable domain/API (in-memory Database → Postgres/Supabase)
 - SQL: `supabase/migrations/`, seed из TS: `npm run seed:sql` → `supabase/seed/`
-- Production / Dokploy: корневой `Dockerfile` + nginx (`VITE_PERSIST_LOCAL_DB=false`)
+- Production / Dokploy: корневой `Dockerfile` + nginx (`VITE_PERSIST_LOCAL_DB=true` — справочники переживают logout)
 
 ## Скрипты
 

@@ -3,7 +3,7 @@
 #
 # Build-time args (Dokploy → Environment → Build Arguments):
 #   VITE_APP_ENV=production
-#   VITE_PERSIST_LOCAL_DB=false
+#   VITE_PERSIST_LOCAL_DB=true
 #   VITE_SUPABASE_URL=...
 #   VITE_SUPABASE_ANON_KEY=...
 
@@ -12,7 +12,8 @@ FROM node:22-alpine AS build
 WORKDIR /app
 
 ARG VITE_APP_ENV=production
-ARG VITE_PERSIST_LOCAL_DB=false
+# Portable SPA: persist справочники/протоколы в localStorage (пока нет Postgres API)
+ARG VITE_PERSIST_LOCAL_DB=true
 ARG VITE_SUPABASE_URL=
 ARG VITE_SUPABASE_ANON_KEY=
 
