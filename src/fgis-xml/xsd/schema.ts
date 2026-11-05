@@ -1,7 +1,8 @@
 /**
- * Минимальная XSD-схема пакета ФГИС по правилам ТЗ §10.2.
- * Корневой элемент — root (актуальная схема ФГИС Росаккредитации;
- * историческое имя Protocols отклоняется загрузчиком).
+ * Минимальная XSD-схема пакета ФГИС по правилам ТЗ §10.2 и актуального
+ * загрузчика ФГИС Росаккредитации (JAXB).
+ * Корневой элемент — root (историческое имя Protocols отклоняется).
+ * ModelGetDate / FullNameObject / ResearchObject — дети ObjectInfo, не protocol.
  * Клиентский XSD при появлении заменяет этот файл; валидатор читает sequence отсюда.
  */
 export const FGIS_PROTOCOL_XSD = `<?xml version="1.0" encoding="utf-8"?>
@@ -35,9 +36,6 @@ export const FGIS_PROTOCOL_XSD = `<?xml version="1.0" encoding="utf-8"?>
       <xs:element name="Equipment" type="EquipmentType"/>
       <xs:element name="ApprovedUser" type="ApprovedUserType"/>
       <xs:element name="ObjectInfo" type="ObjectInfoType"/>
-      <xs:element name="ModelGetDate" type="xs:string" minOccurs="0"/>
-      <xs:element name="FullNameObject" type="xs:string"/>
-      <xs:element name="ResearchObject" type="ResearchObjectType" maxOccurs="unbounded"/>
     </xs:sequence>
   </xs:complexType>
 
@@ -116,6 +114,9 @@ export const FGIS_PROTOCOL_XSD = `<?xml version="1.0" encoding="utf-8"?>
   <xs:complexType name="ObjectInfoType">
     <xs:sequence>
       <xs:element name="TypeObjectId" type="xs:string"/>
+      <xs:element name="ModelGetDate" type="xs:string" minOccurs="0"/>
+      <xs:element name="FullNameObject" type="xs:string"/>
+      <xs:element name="ResearchObject" type="ResearchObjectType" maxOccurs="unbounded"/>
     </xs:sequence>
   </xs:complexType>
 
@@ -176,6 +177,11 @@ export const PROTOCOL_CHILD_SEQUENCE = [
   'Equipment',
   'ApprovedUser',
   'ObjectInfo',
+] as const
+
+/** Порядок дочерних элементов ObjectInfo. */
+export const OBJECT_INFO_SEQUENCE = [
+  'TypeObjectId',
   'ModelGetDate',
   'FullNameObject',
   'ResearchObject',

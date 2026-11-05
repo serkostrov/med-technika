@@ -1,4 +1,6 @@
 import { existsSync, readFileSync } from 'node:fs'
+import { dirname, join } from 'node:path'
+import { fileURLToPath } from 'node:url'
 import { describe, expect, it } from 'vitest'
 import { createSeedBundle } from '@/data/seed'
 import {
@@ -15,6 +17,11 @@ import {
 import { sha256Hex } from '@/parser/hash'
 import { bootstrapServer, SeedCredentials } from '@/server'
 
+const FIXTURES_REAL = join(
+  dirname(fileURLToPath(import.meta.url)),
+  'fixtures/real',
+)
+const REAL_DF_22 = join(FIXTURES_REAL, '22-26-ДФ.xlsx')
 const REAL_DF =
   '/Users/talininigor/Downloads/29-26-ДФ КОГБУЗ Омутнинская ЦРБ.xlsx'
 const REAL_UHF =
@@ -86,6 +93,12 @@ describe('Эталонные протоколы (App. A)', () => {
     })
     expect(parsed.parserProfile).toBe('physio-df')
     expect(parsed.metadata.number).toBe('26-26-ДФ')
+    expect(parsed.objects).toHaveLength(1)
+    expect(parsed.objects[0]).toMatchObject({
+      name: 'PRIMEDIC Defi-B',
+      serialNo: 'D1',
+      year: '2014',
+    })
     expect(parsed.results).toHaveLength(10)
     expect(parsed.results.map((r) => r.factValue)).toEqual([
       '7',
@@ -110,6 +123,98 @@ describe('Эталонные протоколы (App. A)', () => {
       'energy_2_8kv',
       'energy_2_8kv',
       'interval',
+    ])
+  })
+
+  it('боевой 22-26-ДФ: 4 объекта без нумерации, 43 результата', () => {
+    const buf = readFileSync(REAL_DF_22)
+    const data = buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength)
+    const parsed = parseProtocol({
+      data,
+      forms: seed.protocolForms,
+      indicatorMaps: seed.formIndicatorMaps,
+    })
+    expect(parsed.metadata.number).toBe('22-26-ДФ')
+    expect(parsed.parserProfile).toBe('physio-df')
+    expect(parsed.metadata.engineerShortName).toMatch(/Судницын/)
+    expect(parsed.objects).toHaveLength(4)
+    expect(parsed.objects.map((o) => o.serialNo)).toEqual([
+      '81933',
+      'Д081481369',
+      '82075',
+      '71144025527',
+    ])
+    expect(parsed.objects.map((o) => o.year)).toEqual([
+      '2008',
+      '2014',
+      '2010',
+      null,
+    ])
+    expect(parsed.objects.map((o) => o.department)).toEqual([
+      'Отделение анестезиологии и реанимации №2',
+      'Отделение анестезиологии и реанимации №2',
+      'Отделение анестезиологии и реанимации №1',
+      'Родильное отделение',
+    ])
+    expect(parsed.results).toHaveLength(43)
+    // первый объект: 5 + 6 + 2
+    expect(
+      parsed.results.filter((r) => r.objectSeq === 1).map((r) => r.sourceKey),
+    ).toEqual([
+      'energy_le2kv',
+      'energy_le2kv',
+      'energy_le2kv',
+      'energy_le2kv',
+      'energy_le2kv',
+      'energy_2_8kv',
+      'energy_2_8kv',
+      'energy_2_8kv',
+      'energy_2_8kv',
+      'energy_2_8kv',
+      'energy_2_8kv',
+      'interval',
+      'interval',
+    ])
+    expect(
+      parsed.results.filter((r) => r.objectSeq === 1).map((r) => r.factValue),
+    ).toEqual([
+      '7',
+      '10',
+      '19',
+      '30',
+      '48',
+      '69',
+      '97',
+      '147',
+      '195',
+      '293',
+      '353',
+      '1,8',
+      '3,2',
+    ])
+    // последний объект: 1 + 5 + 1
+    expect(
+      parsed.results.filter((r) => r.objectSeq === 4).map((r) => r.sourceKey),
+    ).toEqual([
+      'energy_le2kv',
+      'energy_2_8kv',
+      'energy_2_8kv',
+      'energy_2_8kv',
+      'energy_2_8kv',
+      'energy_2_8kv',
+      'interval',
+    ])
+    expect(
+      parsed.results.filter((r) => r.objectSeq === 4).map((r) => r.factValue),
+    ).toEqual(['20', '55', '106', '166', '251', '356', '4,0'])
+    // СИ: 4 пункта после склейки многострочных абзацев
+    const si = parsed.equipment.filter((e) => e.kind === 'si')
+    expect(si).toHaveLength(4)
+    expect(si.map((e) => e.serialRaw)).toEqual([
+      '190006',
+      'NHS08DAD3R0670',
+      '73213',
+      '3069',
     ])
   })
 
@@ -217,6 +322,50 @@ describe('Загрузка: SHA-256 и save', () => {
     const dup = await api.uploads.parseUpload(ctx, '20-26-УВЧ.xlsx', data)
     expect(dup.alreadyUploaded?.protocolId).toBe(saved.id)
     expect(dup.error).toMatch(/уже загружен/i)
+  })
+
+  it('боевой 22-26-ДФ: save → карточка 4 объекта / 43 результата + XML', async () => {
+    const { api } = await bootstrapServer()
+    const engLogin = await api.login(
+      SeedCredentials.engineer.email,
+      SeedCredentials.engineer.password,
+    )
+    const eng = api.auth.resolveToken(engLogin.token)
+    const headLogin = await api.login(
+      SeedCredentials.head.email,
+      SeedCredentials.head.password,
+    )
+    const head = api.auth.resolveToken(headLogin.token)
+    const buf = readFileSync(REAL_DF_22)
+    const data = buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength)
+
+    const parsed = await api.uploads.parseUpload(eng, '22-26-ДФ.xlsx', data)
+    expect(parsed.error).toBeNull()
+    expect(parsed.parsed?.objects).toHaveLength(4)
+    expect(parsed.parsed?.results).toHaveLength(43)
+
+    const saved = api.uploads.saveParsed(eng, {
+      sourcePath: parsed.sourcePath,
+      sha256: parsed.sha256,
+      parsed: parsed.parsed!,
+    })
+    expect(saved.number).toBe('22-26-ДФ')
+
+    let detail = api.getProtocolDetail(eng, saved.id)
+    expect(detail.objects).toHaveLength(4)
+    expect(detail.results).toHaveLength(43)
+    expect(detail.results.filter((r) => r.oaItemId)).toHaveLength(43)
+    expect(detail.equipment.filter((e) => e.kind === 'si')).toHaveLength(4)
+    // в Excel заказчик пуст — XML после ручного сопоставления
+    expect(detail.xmlPreview).toMatch(/Заказчик не сопоставлен/)
+    const customer = api.createCustomer(head, {
+      name: 'Тестовый заказчик ДФ',
+    })
+    api.updateProtocol(eng, saved.id, { customerId: customer.id })
+    detail = api.getProtocolDetail(eng, saved.id)
+    expect(detail.xmlPreview).toContain('<FullNameObject>')
+    expect(detail.xmlPreview).toMatch(/Дефибрилляторы/)
+    expect(detail.xmlPreview.match(/<ResearchObject>/g)?.length).toBe(43)
   })
 
   it('замена по номеру+дате до выгрузки', async () => {

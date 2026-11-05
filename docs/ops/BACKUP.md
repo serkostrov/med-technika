@@ -2,15 +2,17 @@
 
 ## Dev runtime (in-memory Database)
 
-В portable SPA данные живут в `src/server/db`. Снимок в `localStorage` (`mt.db.v1`) сохраняется при изменениях и **не удаляется при logout** (сбрасывается только сессия входа).
+В portable SPA данные живут в `src/server/db`. Снимок (`mt.db.v1` + резерв `.bak`) пишется в **IndexedDB** (БД `mt-persist`; при недоступности — localStorage). Logout сбрасывает **только** сессию входа; справочники и протоколы остаются.
 
-1. **Создать снимок** — `exportDatabaseSnapshot(db)` → JSON (таблицы + blobs base64).
-2. **Восстановить** — `importDatabaseSnapshot(db, snap)`.
+Незавершённые чанковые загрузки (`pendingUploads`) в снимок **не** входят — после logout/refresh их нужно начать заново.
+
+1. **UI** — Настройки → Основные → «Скачать резервную копию» / «Восстановить из файла».
+2. **Код** — `exportDatabaseSnapshot(db)` → JSON (таблицы + blobs base64); `importDatabaseSnapshot(db, snap)`.
 3. **CLI-шаблон** — `node scripts/backup-restore.mjs backup backups/mt.json`.
 
 Храните снимки вне контейнера (volume / S3). Retention: **14 дней** (ТЗ).
 
-Автотест round-trip: `src/server/db/backup.test.ts`.
+Автотесты: `src/server/db/backup.test.ts`, `src/client/shared-api.persist.test.ts`.
 
 ## Целевой Postgres + Storage
 

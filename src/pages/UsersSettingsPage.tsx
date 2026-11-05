@@ -1,8 +1,13 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { Navigate } from 'react-router-dom'
 import { useAuth } from '@/client/auth-context'
 import { fetchSettings, writeSetting } from '@/client/api'
 import { apiFetchJson } from '@/client/dictionaries-api'
+import {
+  exportSharedDbSnapshot,
+  importSharedDbSnapshot,
+} from '@/client/shared-api'
+import type { DatabaseSnapshot } from '@/server/db/backup'
 import { useToast } from '@/shared/ui/toast'
 import { ErrorState, LoadingState } from '@/shared/ui/states'
 import { checkCodeLabel } from '@/shared/ui/labels'
@@ -135,6 +140,7 @@ export function UsersSettingsPage() {
   const [passwordTarget, setPasswordTarget] = useState<StaffRow | null>(null)
   const [passwordEmail, setPasswordEmail] = useState('')
   const [passwordValue, setPasswordValue] = useState('')
+  const backupFileRef = useRef<HTMLInputElement>(null)
 
   const reload = useCallback(async () => {
     setError(null)
@@ -206,6 +212,59 @@ export function UsersSettingsPage() {
       notify(err instanceof Error ? err.message : 'Ошибка сохранения', 'error')
     } finally {
       setBusy(false)
+    }
+  }
+
+  async function downloadBackup() {
+    setBusy(true)
+    try {
+      const snap = await exportSharedDbSnapshot()
+      const blob = new Blob([JSON.stringify(snap, null, 2)], {
+        type: 'application/json',
+      })
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `mt-backup-${new Date().toISOString().slice(0, 10)}.json`
+      a.click()
+      URL.revokeObjectURL(url)
+      notify('Резервная копия скачана', 'success')
+    } catch (err) {
+      notify(
+        err instanceof Error ? err.message : 'Не удалось скачать копию',
+        'error',
+      )
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  async function restoreBackup(file: File) {
+    if (
+      !confirm(
+        'Восстановить данные из файла? Текущие справочники и протоколы будут заменены.',
+      )
+    ) {
+      return
+    }
+    setBusy(true)
+    try {
+      const text = await file.text()
+      const snap = JSON.parse(text) as DatabaseSnapshot
+      if (snap.version !== 1 || !snap.tables) {
+        throw new Error('Неверный формат файла резервной копии')
+      }
+      await importSharedDbSnapshot(snap)
+      notify('Данные восстановлены из резервной копии', 'success')
+      await reload()
+    } catch (err) {
+      notify(
+        err instanceof Error ? err.message : 'Не удалось восстановить',
+        'error',
+      )
+    } finally {
+      setBusy(false)
+      if (backupFileRef.current) backupFileRef.current.value = ''
     }
   }
 
@@ -446,6 +505,40 @@ export function UsersSettingsPage() {
             >
               Сохранить
             </button>
+          </div>
+
+          <h2 style={{ marginTop: '1.5rem' }}>Резервная копия</h2>
+          <p className="muted small">
+            Снимок справочников и протоколов хранится в браузере (IndexedDB).
+            Скачайте копию на диск — так данные не пропадут при очистке сайта.
+          </p>
+          <div className="form-actions">
+            <button
+              type="button"
+              className="btn"
+              disabled={busy}
+              onClick={() => void downloadBackup()}
+            >
+              Скачать резервную копию
+            </button>
+            <button
+              type="button"
+              className="btn"
+              disabled={busy}
+              onClick={() => backupFileRef.current?.click()}
+            >
+              Восстановить из файла
+            </button>
+            <input
+              ref={backupFileRef}
+              type="file"
+              accept="application/json,.json"
+              hidden
+              onChange={(e) => {
+                const file = e.target.files?.[0]
+                if (file) void restoreBackup(file)
+              }}
+            />
           </div>
         </section>
       )}

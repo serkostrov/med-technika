@@ -19,6 +19,20 @@ function firstAnchorValue(grid: SheetGrid, anchors: string[]): string {
   return valueRightOf(grid, rows[0]!)
 }
 
+function rowListText(grid: SheetGrid, r: number): string {
+  const aRaw = cellText(grid, r, COL.A)
+  const right = valueRightOf(grid, r)
+  // numbered list often in A itself
+  if (/^\d+[\).]/.test(aRaw)) {
+    return (aRaw + (right ? ' ' + right : '')).trim()
+  }
+  return (right || aRaw).trim()
+}
+
+/**
+ * Список СИ/оборудования: склеиваем продолжения абзаца до следующей
+ * нумерованной строки (`1.` / `2)`) или якоря-стопа.
+ */
 function collectListUntilNextAnchor(
   grid: SheetGrid,
   startRow: number,
@@ -26,18 +40,23 @@ function collectListUntilNextAnchor(
 ): string[] {
   const stops = stopAnchors.map((a) => normalizeText(a).toLowerCase())
   const lines: string[] = []
+  let buf = ''
   for (let r = startRow + 1; r <= grid.maxRow; r++) {
-    const a = normalizeText(cellText(grid, r, COL.A)).toLowerCase()
-    if (a && stops.some((s) => a.includes(s))) break
-    const line = valueRightOf(grid, r) || cellText(grid, r, COL.A)
-    // numbered list often in A itself
-    const full =
-      /^\d+[\).]/.test(cellText(grid, r, COL.A))
-        ? cellText(grid, r, COL.A) +
-          (valueRightOf(grid, r) ? ' ' + valueRightOf(grid, r) : '')
-        : line
-    if (full.trim()) lines.push(full.trim())
+    const aNorm = normalizeText(cellText(grid, r, COL.A)).toLowerCase()
+    if (aNorm && stops.some((s) => aNorm.includes(s))) break
+    const full = rowListText(grid, r)
+    if (!full) continue
+    const startsItem = /^\d+[\).]/.test(full)
+    if (startsItem) {
+      if (buf) lines.push(buf)
+      buf = full
+    } else if (buf) {
+      buf = `${buf} ${full}`.replace(/\s+/g, ' ').trim()
+    } else {
+      buf = full
+    }
   }
+  if (buf) lines.push(buf)
   return lines
 }
 
@@ -47,6 +66,13 @@ function collectListUntilNextAnchor(
  */
 const SI_LINE_RE =
   /^(.+?),\s*зав\.?\s*№\s*([^,]+?)(?:,\s*(?:свид(?:етельство)?\.?\s*(?:о\s*поверке)?\s*№?\s*([^,]+?))?)?(?:,\s*(?:от\s*)?(\d{2}\.\d{2}\.\d{4}))?(?:,?\s*действительн[ао]\s*до\s*(\d{2}\.\d{2}\.\d{4}))?/i
+
+/** «Зав. № 190006.» → 190006 */
+function cleanSerial(raw: string | null | undefined): string | null {
+  if (!raw) return null
+  const s = raw.trim().replace(/[.,;:]+$/g, '').trim()
+  return s || null
+}
 
 function parseSiLine(line: string): ParsedEquipment | null {
   const cleaned = line.replace(/^\d+[\).]\s*/, '').trim()
@@ -58,7 +84,7 @@ function parseSiLine(line: string): ParsedEquipment | null {
       kind: EquipmentKind.si,
       rawText: cleaned,
       name: m[1]?.trim() ?? null,
-      serialRaw: m[2]?.trim() ?? null,
+      serialRaw: cleanSerial(m[2]),
       certRaw: m[3]?.trim() ?? null,
       validUntilRaw: m[5] ? parseRuDate(m[5]) : null,
     }
@@ -71,7 +97,7 @@ function parseSiLine(line: string): ParsedEquipment | null {
       kind: EquipmentKind.si,
       rawText: cleaned,
       name: simple[1]!.trim(),
-      serialRaw: simple[2]!.trim(),
+      serialRaw: cleanSerial(simple[2]),
       certRaw: null,
       validUntilRaw: null,
     }
@@ -95,7 +121,7 @@ function parseAuxLine(line: string, kind: typeof EquipmentKind.aux | typeof Equi
     kind,
     rawText: cleaned,
     name: simple?.[1]?.trim() ?? cleaned,
-    serialRaw: simple?.[2]?.trim() ?? null,
+    serialRaw: cleanSerial(simple?.[2]),
     certRaw: null,
     validUntilRaw: null,
   }

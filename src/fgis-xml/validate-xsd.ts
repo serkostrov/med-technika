@@ -1,4 +1,5 @@
 import {
+  OBJECT_INFO_SEQUENCE,
   PROTOCOL_CHILD_SEQUENCE,
   RESEARCH_INFO_SEQUENCE,
 } from './xsd/schema'
@@ -55,21 +56,14 @@ function validateProtocolBody(body: string, index: number, errors: string[]): vo
     if (name === 'AddressID') return hasAddrId
     if (name === 'Address') return hasAddr
     if (name === 'AccredScope353') return filtered.includes('AccredScope353')
-    if (name === 'ModelGetDate') return filtered.includes('ModelGetDate')
-    if (name === 'ResearchObject') return false // repeats — check separately
     return true
   })
 
-  const withoutResearch = filtered.filter((n) => n !== 'ResearchObject')
-  if (!sequenceMatches(withoutResearch, expectedOrder)) {
+  if (!sequenceMatches(filtered, expectedOrder)) {
     errors.push(
       `protocol[${index}]: нарушен XSD sequence. ` +
-        `Ожидалось [${expectedOrder.join(', ')}], получено [${withoutResearch.join(', ')}]`,
+        `Ожидалось [${expectedOrder.join(', ')}], получено [${filtered.join(', ')}]`,
     )
-  }
-
-  if (!filtered.includes('ResearchObject')) {
-    errors.push(`protocol[${index}]: нет ResearchObject`)
   }
 
   // обязательные константы
@@ -78,6 +72,48 @@ function validateProtocolBody(body: string, index: number, errors: string[]): vo
   }
   if (!body.includes('<ProtocolStatusId>6</ProtocolStatusId>')) {
     errors.push(`protocol[${index}]: ProtocolStatusId должен быть 6`)
+  }
+
+  const objectInfos = [
+    ...body.matchAll(/<ObjectInfo>([\s\S]*?)<\/ObjectInfo>/g),
+  ]
+  if (objectInfos.length !== 1) {
+    errors.push(`protocol[${index}]: нужен ровно один ObjectInfo`)
+  }
+
+  for (let o = 0; o < objectInfos.length; o++) {
+    validateObjectInfo(objectInfos[o]![1]!, index, o + 1, errors)
+  }
+}
+
+function validateObjectInfo(
+  body: string,
+  protocolIndex: number,
+  objectIndex: number,
+  errors: string[],
+): void {
+  const children = topLevelChildNames(body)
+  const allowed = new Set<string>(OBJECT_INFO_SEQUENCE)
+  const filtered = children.filter((n) => allowed.has(n))
+
+  const expectedOrder = OBJECT_INFO_SEQUENCE.filter((name) => {
+    if (name === 'ModelGetDate') return filtered.includes('ModelGetDate')
+    if (name === 'ResearchObject') return false // repeats — check separately
+    return true
+  })
+
+  const withoutResearch = filtered.filter((n) => n !== 'ResearchObject')
+  if (!sequenceMatches(withoutResearch, expectedOrder)) {
+    errors.push(
+      `protocol[${protocolIndex}] ObjectInfo[${objectIndex}]: нарушен sequence. ` +
+        `Ожидалось [${expectedOrder.join(', ')}], получено [${withoutResearch.join(', ')}]`,
+    )
+  }
+
+  if (!filtered.includes('ResearchObject')) {
+    errors.push(
+      `protocol[${protocolIndex}] ObjectInfo[${objectIndex}]: нет ResearchObject`,
+    )
   }
 
   const researches = [
@@ -89,7 +125,8 @@ function validateProtocolBody(body: string, index: number, errors: string[]): vo
     const names = topLevelChildNames(researches[r]![1]!)
     if (!sequenceMatches(names, [...RESEARCH_INFO_SEQUENCE])) {
       errors.push(
-        `protocol[${index}] ResearchObjectInfo[${r + 1}]: нарушен sequence ` +
+        `protocol[${protocolIndex}] ObjectInfo[${objectIndex}] ` +
+          `ResearchObjectInfo[${r + 1}]: нарушен sequence ` +
           `[${RESEARCH_INFO_SEQUENCE.join(', ')}]`,
       )
     }
@@ -98,11 +135,8 @@ function validateProtocolBody(body: string, index: number, errors: string[]): vo
 
 function topLevelChildNames(xmlFragment: string): string[] {
   const names: string[] = []
-  const re = /<([A-Za-z][\w]*)(?:\s[^>]*)?>/g
   let depth = 0
   let m: RegExpExecArray | null
-  const selfClosing = /<([A-Za-z][\w]*)(?:\s[^>]*)?\/>/g
-  // walk tags
   const tagRe = /<\/?([A-Za-z][\w]*)(?:\s[^>]*)?\/?>/g
   while ((m = tagRe.exec(xmlFragment))) {
     const full = m[0]
@@ -118,8 +152,6 @@ function topLevelChildNames(xmlFragment: string): string[] {
     if (depth === 0) names.push(name)
     depth += 1
   }
-  void re
-  void selfClosing
   return names
 }
 

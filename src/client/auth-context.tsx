@@ -15,7 +15,7 @@ import {
   getStoredToken,
   loginRequest,
 } from '@/client/api'
-import { flushPersistSharedDb, resetSharedApi } from '@/client/shared-api'
+import { flushPersistSharedDb } from '@/client/shared-api'
 
 type Session = {
   email: string
@@ -60,12 +60,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const logout = useCallback(() => {
-    // Сначала сохраняем справочники/протоколы, потом только сессию.
-    flushPersistSharedDb()
-    clearSession()
-    // Память сбрасываем, localStorage с данными НЕ трогаем.
-    resetSharedApi()
-    setSession(null)
+    // Сначала дописываем снимок, потом только сессию входа.
+    // In-memory БД и IndexedDB НЕ трогаем — справочники переживают logout.
+    void (async () => {
+      try {
+        await flushPersistSharedDb()
+      } catch {
+        /* ошибка уже ушла в onPersistFailure → toast */
+      }
+      clearSession()
+      setSession(null)
+    })()
   }, [])
 
   const refresh = useCallback(async () => {

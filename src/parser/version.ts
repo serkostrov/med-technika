@@ -3,7 +3,7 @@ export const PARSER_VERSION = '1.0.1'
 
 export const PROFILE_VERSIONS = {
   'physio-bb': '1.0.0',
-  'physio-df': '1.0.1',
+  'physio-df': '1.0.2',
 } as const
 
 export type KnownParserProfile = keyof typeof PROFILE_VERSIONS

@@ -10,8 +10,9 @@ import {
 } from '../sheet-utils'
 import type { ParsedObject, ParsedResult } from '../types'
 
+/** Номер `N.` опционален — в боевых ДФ часто «Дефибриллятор: …, YYYY г.в.» */
 const OBJECT_RE =
-  /^(\d+)\.\s*Дефибриллятор:\s*(.+?),\s*зав\.?\s*№\s*([^,]+)(?:,\s*(\d{4})\s*г\.?)?/i
+  /^(?:(\d+)\.\s*)?Дефибриллятор:\s*(.+?),\s*зав\.?\s*№\s*([^,]+)(?:,\s*(\d{4})\s*г\.?в?\.?)?/i
 
 type BlockKey = 'energy_le2kv' | 'energy_2_8kv' | 'interval'
 
@@ -80,11 +81,13 @@ export function parsePhysioDf(
     const obj = OBJECT_RE.exec(a)
     if (obj) {
       const prev = cellText(grid, r - 1, COL.A)
+      // отделение — отдельная строка выше; не путать с строкой измерения (BB–BE)
       if (
         prev &&
         !OBJECT_RE.test(prev) &&
         !rowDetectBlock(grid, r - 1) &&
-        !/результат/i.test(prev)
+        !bbBe(grid, r - 1) &&
+        !/результат|установленн|энергия импульса/i.test(prev)
       ) {
         currentDepartment = prev
       }

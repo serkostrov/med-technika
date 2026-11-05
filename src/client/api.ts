@@ -2,7 +2,7 @@ import {
   handleApiRequest,
   type SecureApi,
 } from '@/server'
-import { getSharedApi, persistSharedDb } from '@/client/shared-api'
+import { flushPersistSharedDb, getSharedApi, persistSharedDb } from '@/client/shared-api'
 
 const BASE = 'http://il.local'
 const TOKEN_KEY = 'mt.access_token'
@@ -30,7 +30,19 @@ async function apiFetch(path: string, init: RequestInit = {}): Promise<Response>
     headers.set('content-type', 'application/json')
   }
   const res = await handleApiRequest(api, new Request(`${BASE}${path}`, { ...init, headers }))
-  if (res.status !== 401) persistSharedDb()
+  if (res.status !== 401) {
+    // Мутации — сразу на диск; чтение — debounce через persistSharedDb в login.
+    const method = (init.method ?? 'GET').toUpperCase()
+    if (method !== 'GET' && method !== 'HEAD') {
+      try {
+        await flushPersistSharedDb()
+      } catch {
+        /* onPersistFailure → toast */
+      }
+    } else {
+      persistSharedDb()
+    }
+  }
   return res
 }
 
@@ -59,7 +71,11 @@ export async function loginRequest(
       staffId: body.account.staffId,
     }),
   )
-  persistSharedDb()
+  try {
+    await flushPersistSharedDb()
+  } catch {
+    /* session tokens уже в sessionStorage */
+  }
   return {
     token: body.token,
     role: body.account.role,

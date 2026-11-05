@@ -1,5 +1,5 @@
 import { clearSession, getStoredToken } from '@/client/api'
-import { getSharedApi, persistSharedDb } from '@/client/shared-api'
+import { flushPersistSharedDb, getSharedApi } from '@/client/shared-api'
 import { handleApiRequest } from '@/server'
 
 const BASE = 'http://il.local'
@@ -20,7 +20,13 @@ async function apiFetchRaw(
     new Request(`${BASE}${path}`, { ...init, headers }),
   )
   if (res.status === 401) clearSession()
-  if (res.ok) persistSharedDb()
+  if (res.ok) {
+    try {
+      await flushPersistSharedDb()
+    } catch {
+      /* onPersistFailure → toast; мутация в памяти уже применена */
+    }
+  }
   return res
 }
 

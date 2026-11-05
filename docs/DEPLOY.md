@@ -75,24 +75,30 @@ VITE_SUPABASE_ANON_KEY=
 
 Файлы: корневой `Dockerfile`, nginx — `docker/nginx.dokploy.conf`, игнор контекста — `.dockerignore`.
 
-## sessionStorage / localStorage
+## Хранение данных в браузере (portable SPA)
 
 | Ключ | Где | Что |
 |------|-----|-----|
-| `mt.db.v1` | **localStorage** | снимок in-memory БД (справочники, протоколы). Logout **не** удаляет |
+| `mt.db.v1` (+ `.bak`) | **IndexedDB** `mt-persist` (fallback: localStorage) | снимок in-memory БД (справочники, протоколы). Logout **не** удаляет |
 | `mt.access_token` | sessionStorage | токен сессии входа |
 | `mt.session` | sessionStorage | email/role/staffId для UI |
 
-`VITE_PERSIST_LOCAL_DB=false` — не писать `mt.db.v1` (только когда появится Postgres API).
+- Logout чистит **только** sessionStorage (вход). In-memory БД и снимок остаются.
+- Ошибки записи снимка показываются toast («Не удалось сохранить данные локально»).
+- UI: **Настройки → Основные → Резервная копия** (скачать / восстановить JSON).
+- Legacy-снимки из localStorage/sessionStorage мигрируют в IndexedDB при первом чтении.
+
+`VITE_PERSIST_LOCAL_DB=false` — не писать снимок (только когда появится Postgres API).
 
 ## Checklist перед заливкой
 
 1. [ ] `.env` на сервере без `*.dev` паролей в проде  
 2. [ ] `npm run seed:sql` и миграции накатили на Postgres  
 3. [ ] `VITE_PERSIST_LOCAL_DB=true` в build args (portable SPA)  
-4. [ ] `npm test && npm run build` зелёные  
-5. [ ] Backup cron по [ops/BACKUP.md](ops/BACKUP.md)  
-6. [ ] Reverse proxy + TLS  
+4. [ ] Образ **пересобран** после фикса персистентности (IndexedDB + logout без wipe)  
+5. [ ] `npm test && npm run build` зелёные  
+6. [ ] Backup cron / UI-бэкап по [ops/BACKUP.md](ops/BACKUP.md)  
+7. [ ] Reverse proxy + TLS  
 
 ## Следующий этап (Postgres runtime)
 

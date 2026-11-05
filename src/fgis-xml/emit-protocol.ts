@@ -209,21 +209,26 @@ export function emitProtocolXml(ctx: ProtocolXmlContext): string {
   parts.push(el('NoEquipmentInfo', false))
   parts.push(emitEquipment(ctx.equipmentRows, ctx.equipmentById))
   parts.push(emitApprovedUser(ctx.engineer, ctx.approver))
-  parts.push(wrap('ObjectInfo', el('TypeObjectId', ctx.form.typeObjectId ?? 1)))
 
+  // ObjectInfo — контейнер объекта и результатов (актуальная XSD ФГИС:
+  // ModelGetDate / FullNameObject / ResearchObject не являются детьми protocol).
+  const objectParts: string[] = [
+    el('TypeObjectId', ctx.form.typeObjectId ?? 1),
+  ]
   const modelGet = p.modelGetDate ?? p.measureStart
   if (modelGet) {
-    parts.push(el('ModelGetDate', modelGet))
+    objectParts.push(el('ModelGetDate', modelGet))
   }
-
-  parts.push(el('FullNameObject', p.objectFullName ?? ''))
+  objectParts.push(el('FullNameObject', p.objectFullName ?? ''))
 
   const results = [...ctx.results]
     .filter((r) => r.includeInXml)
     .sort((a, b) => a.seq - b.seq)
   for (const r of results) {
-    parts.push(emitResearch(r, ctx))
+    objectParts.push(emitResearch(r, ctx))
   }
+
+  parts.push(wrap('ObjectInfo', objectParts.join('')))
 
   return wrap('protocol', parts.join(''))
 }
