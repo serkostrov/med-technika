@@ -2,6 +2,7 @@ import { EquipmentKind, type EquipmentKind as EqKind } from '@/domain'
 import { normalizeSerial, normalizeText } from '@/dictionaries/normalize/text'
 import {
   cellStr,
+  cellStrByPrefix,
   hasBlockingIssues,
   type ExcelRow,
   type ImportIssue,
@@ -41,7 +42,12 @@ export function previewEquipmentImport(
 
   rows.forEach((row, idx) => {
     const rowNum = idx + 2
-    const name = cellStr(row, 'наименование', 'Наименование', 'name')
+    const name =
+      cellStr(row, 'наименование', 'Наименование', 'name') ||
+      cellStrByPrefix(row, ['наименование', 'название'], [
+        'наименование документа',
+        'наименование нд',
+      ])
     const serialNo =
       cellStr(row, 'зав. №', 'зав.№', 'серийный номер', 'serial', 'serial_no') ||
       null

@@ -13,6 +13,8 @@ export type UbParams = { type: 'rel' | 'abs'; value: number }
 export function recalcMeanAndU(
   rawValues: number[],
   ub: UbParams | null,
+  /** uB строки из Excel (колонка BH) — приоритетнее настроек формы */
+  ubExcel: number | null = null,
 ): ServerRecalc {
   const n = rawValues.length
   if (n === 0) {
@@ -25,7 +27,9 @@ export function recalcMeanAndU(
   }
   const uA = Math.sqrt(variance / n)
   let uB = 0
-  if (ub) {
+  if (ubExcel != null && Number.isFinite(ubExcel)) {
+    uB = ubExcel
+  } else if (ub) {
     uB =
       ub.type === 'rel'
         ? (avg * ub.value) / Math.sqrt(3)

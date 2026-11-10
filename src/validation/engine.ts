@@ -215,10 +215,26 @@ export function protocolRunChecks(
           (v.verifiedOn == null || v.verifiedOn <= mStart),
       )
       if (vers.length === 0) {
+        const known = db.equipmentVerifications
+          .filter((v) => v.equipmentId === eq.id && v.deletedAt === null)
+          .sort((x, y) => y.validUntil.localeCompare(x.validUntil))
+        const serial = eq.serialNo ?? eq.serialNorm
+        const who = serial ? `${eq.name}, зав. № ${serial}` : eq.name
+        const period = `измерения ${ruDate(mStart)}–${ruDate(mEnd)}`
+        const hint =
+          known.length === 0
+            ? 'в справочнике нет поверок этого СИ'
+            : `в справочнике: ${known
+                .slice(0, 3)
+                .map(
+                  (v) =>
+                    `${v.certNo || 'б/н'} (${v.verifiedOn ? ruDate(v.verifiedOn) : '?'} – ${ruDate(v.validUntil)})`,
+                )
+                .join('; ')}`
         add(
           'E05',
           'error',
-          'Поверка СИ не действует на период измерений',
+          `Поверка СИ не действует на период измерений: ${who}; ${period}; ${hint}`,
           { equipmentId: eq.id, seq: pe.seq },
         )
       } else if (pe.certRaw || pe.validUntilRaw) {
@@ -444,7 +460,11 @@ export function protocolRunChecks(
         (m) =>
           m.formId === protocol.formId && m.sourceKey === result.sourceKey,
       )
-      const recalc = recalcMeanAndU(result.rawValues, map?.ub ?? null)
+      const recalc = recalcMeanAndU(
+        result.rawValues,
+        map?.ub ?? null,
+        result.ubExcel ?? null,
+      )
       // хранить серверный пересчёт отдельно от Excel
       result.avgCalc = recalc.avg
       result.uCalc = recalc.U
@@ -492,4 +512,10 @@ export function rerunChecksForActiveProtocols(db: Database): number {
 
 export function isProtocolActiveForChecks(protocol: Protocol): boolean {
   return ACTIVE_FOR_DICT_RERUN.has(protocol.status)
+}
+
+/** 2026-07-27 → 27.07.2026 */
+function ruDate(iso: string): string {
+  const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(iso)
+  return m ? `${m[3]}.${m[2]}.${m[1]}` : iso
 }

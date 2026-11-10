@@ -343,6 +343,15 @@ describe('Загрузка: SHA-256 и save', () => {
     expect(parsed.error).toBeNull()
     expect(parsed.parsed?.objects).toHaveLength(4)
     expect(parsed.parsed?.results).toHaveLength(43)
+    // uB берётся из строки Excel (BH) → пересчёт U совпадает с Excel
+    const withU = parsed.parsed!.results.filter(
+      (r) => r.uExcel != null && r.rawValues?.length,
+    )
+    expect(withU.length).toBeGreaterThan(0)
+    for (const r of withU) {
+      expect(r.ubExcel, r.sourceKey).not.toBeNull()
+      expect(Math.abs(r.uCalc! - r.uExcel!)).toBeLessThan(1e-6)
+    }
 
     const saved = api.uploads.saveParsed(eng, {
       sourcePath: parsed.sourcePath,

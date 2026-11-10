@@ -197,6 +197,8 @@ export type ProtocolResult = {
   rawValues: MeasureNumber[] | null
   avgExcel: MeasureNumber | null
   uExcel: MeasureNumber | null
+  /** uB строки из Excel (BH): в каждой строке своя погрешность СИ */
+  ubExcel?: MeasureNumber | null
   avgCalc: MeasureNumber | null
   uCalc: MeasureNumber | null
   numberFormat: string | null

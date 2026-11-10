@@ -25,6 +25,14 @@ type SelectProps = {
   className?: string
   id?: string
   'aria-label'?: string
+  /** Поле поиска сверху списка (для длинных справочников) */
+  searchable?: boolean
+  searchPlaceholder?: string
+}
+
+/** Без учёта регистра, пробелов, точек и дефисов: «NHS08 dad» ≈ «NHS08DAD3R0670» */
+function normalizeForSearch(s: string): string {
+  return s.toLowerCase().replace(/[\s.\-–—/«»"]/g, '')
 }
 
 export function Select({
@@ -36,8 +44,12 @@ export function Select({
   className,
   id,
   'aria-label': ariaLabel,
+  searchable = false,
+  searchPlaceholder = 'Поиск…',
 }: SelectProps) {
   const [open, setOpen] = useState(false)
+  const [query, setQuery] = useState('')
+  const searchRef = useRef<HTMLInputElement>(null)
   const [menuStyle, setMenuStyle] = useState<CSSProperties>({})
   const rootRef = useRef<HTMLDivElement>(null)
   const triggerRef = useRef<HTMLButtonElement>(null)
@@ -45,6 +57,10 @@ export function Select({
   const listId = useId()
   const selected = options.find((o) => o.value === value)
   const label = selected?.label ?? placeholder
+  const q = searchable ? normalizeForSearch(query) : ''
+  const visibleOptions = q
+    ? options.filter((o) => normalizeForSearch(o.label).includes(q))
+    : options
 
   function placeMenu() {
     const el = triggerRef.current
@@ -77,14 +93,18 @@ export function Select({
   }, [open])
 
   useEffect(() => {
+    if (open && searchable) searchRef.current?.focus()
+  }, [open, searchable])
+
+  useEffect(() => {
     if (!open) return
     function onDoc(e: MouseEvent) {
       const t = e.target as Node
       if (rootRef.current?.contains(t) || menuRef.current?.contains(t)) return
-      setOpen(false)
+      close()
     }
     function onKey(e: globalThis.KeyboardEvent) {
-      if (e.key === 'Escape') setOpen(false)
+      if (e.key === 'Escape') close()
     }
     document.addEventListener('mousedown', onDoc)
     document.addEventListener('keydown', onKey)
@@ -94,14 +114,28 @@ export function Select({
     }
   }, [open])
 
+  function close() {
+    setOpen(false)
+    setQuery('')
+  }
+
   function toggle() {
     if (disabled) return
-    setOpen((v) => !v)
+    if (open) close()
+    else setOpen(true)
   }
 
   function choose(next: string) {
     onChange(next)
-    setOpen(false)
+    close()
+  }
+
+  function onSearchKey(e: KeyboardEvent<HTMLInputElement>) {
+    if (e.key === 'Enter') {
+      e.preventDefault()
+      const first = visibleOptions.find((o) => !o.disabled)
+      if (first) choose(first.value)
+    }
   }
 
   function onTriggerKey(e: KeyboardEvent<HTMLButtonElement>) {
@@ -160,7 +194,25 @@ export function Select({
               selected ? `${listId}-${selected.value || 'empty'}` : undefined
             }
           >
-            {options.map((opt) => {
+            {searchable ? (
+              <li role="presentation" className="ui-select__search">
+                <input
+                  ref={searchRef}
+                  type="search"
+                  value={query}
+                  placeholder={searchPlaceholder}
+                  aria-label={searchPlaceholder}
+                  onChange={(e) => setQuery(e.target.value)}
+                  onKeyDown={onSearchKey}
+                />
+              </li>
+            ) : null}
+            {searchable && visibleOptions.length === 0 ? (
+              <li role="presentation" className="ui-select__empty">
+                Ничего не найдено
+              </li>
+            ) : null}
+            {visibleOptions.map((opt) => {
               const active = opt.value === value
               const optId = `${listId}-${opt.value || 'empty'}`
               return (

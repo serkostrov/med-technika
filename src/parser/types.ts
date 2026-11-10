@@ -18,6 +18,8 @@ export type ParsedResult = {
   rawValues: number[] | null
   avgExcel: number | null
   uExcel: number | null
+  /** uB строки из Excel (BH) */
+  ubExcel: number | null
   avgCalc: number | null
   uCalc: number | null
   numberFormat: string | null

@@ -194,6 +194,18 @@ describe('other imports', () => {
     expect(staff.canCommit).toBe(false)
   })
 
+  it('оборудование: наименование из колонки «Наименование оборудования…»', () => {
+    const eq = previewEquipmentImport([
+      {
+        'Наименование оборудования, тип': 'Метеоскоп-М',
+        'зав. №': '73213',
+        EquipmentId: '200',
+      },
+    ])
+    expect(eq.issues.filter((i) => i.severity === 'error')).toEqual([])
+    expect(eq.rows[0]?.name).toBe('Метеоскоп-М')
+  })
+
   it('импорт единиц с конфликтом обозначения', () => {
     const preview = previewUnitsImport([
       { ID: '42', наименование: 'ватт', обозначение: 'Вт' },

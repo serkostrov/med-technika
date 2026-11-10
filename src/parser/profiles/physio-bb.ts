@@ -113,8 +113,9 @@ export function parsePhysioBb(
     const numberFormat = akCell?.z ?? '0.0'
     const avgExcel = cellNumber(grid, r, COL.BF)
     const uExcel = cellNumber(grid, r, COL.BJ)
+    const ubExcel = cellNumber(grid, r, COL.BH)
 
-    const recalc = recalcMeanAndU(rawValues, ubFromMap(map))
+    const recalc = recalcMeanAndU(rawValues, ubFromMap(map), ubExcel)
     const factSource =
       displayValue != null
         ? displayValue
@@ -144,6 +145,7 @@ export function parsePhysioBb(
       rawValues,
       avgExcel,
       uExcel,
+      ubExcel,
       avgCalc: recalc.avg,
       uCalc: recalc.U,
       numberFormat,

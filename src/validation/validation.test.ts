@@ -356,6 +356,12 @@ describe('protocol_run_checks E01–E15', () => {
     }
     protocolRunChecks(db, p.id)
     expect(hasCode(db, p.id, 'E05')).toBe(true)
+    const e05 = db.protocolIssues.find(
+      (i) => i.protocolId === p.id && i.code === 'E05' && i.isActive,
+    )
+    // в тексте — какое СИ и какие поверки есть в справочнике
+    expect(e05?.message).toContain(eq.name)
+    expect(e05?.message).toContain('01.01.2020')
   })
 
   it('E06: исполнитель без idFullName', () => {

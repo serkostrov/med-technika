@@ -775,6 +775,21 @@ function EquipmentPanel({
     return m
   }, [snapshot.equipment])
 
+  const [equipQuery, setEquipQuery] = useState('')
+  const filteredEquipment = useMemo(() => {
+    const q = equipQuery.trim().toLowerCase()
+    if (!q) return snapshot.equipment
+    const qSerial = q.replace(/[\s.\-–—/]/g, '')
+    return snapshot.equipment.filter(
+      (e) =>
+        e.name.toLowerCase().includes(q) ||
+        (e.serialNo ?? '').toLowerCase().includes(q) ||
+        (qSerial !== '' &&
+          (e.serialNorm ?? '').toLowerCase().includes(qSerial)) ||
+        String(e.fgisEquipmentId ?? '').includes(q),
+    )
+  }, [snapshot.equipment, equipQuery])
+
   async function onExcel(file: File) {
     setBusy(true)
     try {
@@ -978,6 +993,19 @@ function EquipmentPanel({
         {snapshot.equipment.length === 0 ? (
           <EmptyState title="Пока пусто" description="Добавьте вручную или загрузите Excel." />
         ) : (
+          <>
+          <label className="field">
+            <span>Поиск</span>
+            <input
+              type="search"
+              value={equipQuery}
+              placeholder="Наименование, зав. № или код СИ"
+              onChange={(e) => setEquipQuery(e.target.value)}
+            />
+          </label>
+          {filteredEquipment.length === 0 ? (
+            <p className="muted">Ничего не найдено.</p>
+          ) : (
           <div className="table-wrap">
             <table className="data-table">
               <thead>
@@ -990,7 +1018,7 @@ function EquipmentPanel({
                 </tr>
               </thead>
               <tbody>
-                {snapshot.equipment.map((e) => (
+                {filteredEquipment.map((e) => (
                   <tr key={e.id}>
                     <td className="cell-start">{e.name}</td>
                     <td>{equipmentKindLabel(e.kind)}</td>
@@ -1006,6 +1034,8 @@ function EquipmentPanel({
               </tbody>
             </table>
           </div>
+          )}
+          </>
         )}
         {preview && (
           <ImportPreviewBlock
@@ -1044,7 +1074,7 @@ function EquipmentPanel({
                     <td className="cell-start">{v.certNo}</td>
                     <td>{formatCalendarDate(v.validUntil)}</td>
                     <td className="cell-start">
-                      {equipById.get(v.equipmentId)?.name ?? '—'}
+                      {equipmentOptionLabel(equipById.get(v.equipmentId))}
                     </td>
                     <RowActions
                       canWrite={canWrite}
@@ -1173,14 +1203,18 @@ function EquipmentPanel({
         <label className="field">
           <span>Оборудование</span>
           <Select
+            searchable
+            searchPlaceholder="Наименование или зав. №"
             value={verForm.equipmentId}
             onChange={(v) => setVerForm((f) => ({ ...f, equipmentId: v }))}
             options={[
               { value: '', label: '—' },
-              ...snapshot.equipment.map((e) => ({
-                value: e.id,
-                label: e.name,
-              })),
+              ...[...snapshot.equipment]
+                .sort((a, b) => a.name.localeCompare(b.name, 'ru'))
+                .map((e) => ({
+                  value: e.id,
+                  label: equipmentOptionLabel(e),
+                })),
             ]}
           />
         </label>
@@ -1214,6 +1248,17 @@ function EquipmentPanel({
 }
 
 /* ── Единицы ──────────────────────────────────────────── */
+
+/** «Метеоскоп-М · зав. № 73213» — чтобы различать одноимённые приборы */
+function equipmentOptionLabel(
+  e:
+    | { name: string; serialNo: string | null; serialNorm: string | null }
+    | undefined,
+): string {
+  if (!e) return '—'
+  const serial = e.serialNo ?? e.serialNorm
+  return serial ? `${e.name} · зав. № ${serial}` : e.name
+}
 
 function UnitsPanel({
   snapshot,

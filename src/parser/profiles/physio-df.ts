@@ -120,9 +120,10 @@ export function parsePhysioDf(
     const displayValue = cellNumber(grid, r, COL.Y)
     const numberFormat = yCell?.z ?? (currentBlock === 'interval' ? '0.0' : '0')
     const uExcel = cellNumber(grid, r, COL.AM)
+    const ubExcel = cellNumber(grid, r, COL.BH)
     const setValue = a || null
     const map = maps.find((m) => m.sourceKey === currentBlock)
-    const recalc = recalcMeanAndU(rawValues, ubFromMap(map))
+    const recalc = recalcMeanAndU(rawValues, ubFromMap(map), ubExcel)
 
     // для энергии без BB иногда значение только в Y
     const factSource =
@@ -156,6 +157,7 @@ export function parsePhysioDf(
       rawValues,
       avgExcel: displayValue,
       uExcel,
+      ubExcel,
       avgCalc: recalc.avg,
       uCalc: recalc.U,
       numberFormat,

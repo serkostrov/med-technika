@@ -318,6 +318,7 @@ export class ProtocolUploadService {
         rawValues: res.rawValues,
         avgExcel: res.avgExcel,
         uExcel: res.uExcel,
+        ubExcel: res.ubExcel,
         avgCalc: res.avgCalc,
         uCalc: res.uCalc,
         numberFormat: res.numberFormat,

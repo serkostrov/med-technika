@@ -700,7 +700,8 @@ p {
 .field textarea,
 .ack-row input,
 .ack-bar input,
-.login-card input {
+.login-card input,
+.ui-select__search input {
   border: 1.5px solid var(--line);
   border-radius: var(--radius-sm);
   padding: 0.4rem var(--control-pad-x);
@@ -721,7 +722,8 @@ p {
 .field input:not([type='checkbox']):not([type='radio']),
 .ack-row input,
 .ack-bar input,
-.login-card input {
+.login-card input,
+.ui-select__search input {
   height: var(--control-h);
   padding-top: 0;
   padding-bottom: 0;
@@ -741,7 +743,8 @@ p {
 
 .field input:not([type='checkbox']):not([type='radio']):focus,
 .field textarea:focus,
-.login-card input:focus {
+.login-card input:focus,
+.ui-select__search input:focus {
   outline: none;
   border-color: var(--brand);
   box-shadow: var(--focus-ring);
@@ -1259,6 +1262,22 @@ input[type='checkbox']:indeterminate {
 .ui-select__option:disabled {
   opacity: 0.45;
   cursor: not-allowed;
+}
+
+.ui-select__search {
+  position: sticky;
+  top: -0.3rem;
+  margin: -0.3rem -0.3rem 0.3rem;
+  padding: 0.4rem;
+  background: var(--bg-elevated);
+  border-bottom: 1px solid var(--line);
+  z-index: 1;
+}
+
+.ui-select__empty {
+  padding: 0.5rem 0.6rem;
+  font-size: 0.875rem;
+  color: var(--muted);
 }
 
 .ui-select__check {

@@ -46,6 +46,33 @@ export function cellStr(row: ExcelRow, ...keys: string[]): string {
   return ''
 }
 
+/**
+ * Значение первой колонки, заголовок которой начинается с одного из префиксов
+ * (без учёта регистра): «Наименование оборудования», «Наименование СИ, тип» …
+ * Колонки из `exclude` пропускаются.
+ */
+export function cellStrByPrefix(
+  row: ExcelRow,
+  prefixes: readonly string[],
+  exclude: readonly string[] = [],
+): string {
+  const norm = (s: string) => s.trim().toLowerCase().replace(/\s+/g, ' ')
+  const excluded = exclude.map(norm)
+  for (const prefix of prefixes.map(norm)) {
+    const found = Object.keys(row).find((k) => {
+      const nk = norm(k)
+      return nk.startsWith(prefix) && !excluded.some((e) => nk.startsWith(e))
+    })
+    if (found) {
+      const v = row[found]
+      if (v !== undefined && v !== null && String(v).trim() !== '') {
+        return String(v).trim()
+      }
+    }
+  }
+  return ''
+}
+
 export function hasBlockingIssues(issues: readonly ImportIssue[]): boolean {
   return issues.some((i) => i.severity === 'error')
 }
