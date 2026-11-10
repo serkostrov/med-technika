@@ -98,15 +98,13 @@ function validateObjectInfo(
 
   const expectedOrder = OBJECT_INFO_SEQUENCE.filter((name) => {
     if (name === 'ModelGetDate') return filtered.includes('ModelGetDate')
-    if (name === 'ResearchObject') return false // repeats — check separately
     return true
   })
 
-  const withoutResearch = filtered.filter((n) => n !== 'ResearchObject')
-  if (!sequenceMatches(withoutResearch, expectedOrder)) {
+  if (!sequenceMatches(filtered, expectedOrder)) {
     errors.push(
       `protocol[${protocolIndex}] ObjectInfo[${objectIndex}]: нарушен sequence. ` +
-        `Ожидалось [${expectedOrder.join(', ')}], получено [${withoutResearch.join(', ')}]`,
+        `Ожидалось [${expectedOrder.join(', ')}], получено [${filtered.join(', ')}]`,
     )
   }
 

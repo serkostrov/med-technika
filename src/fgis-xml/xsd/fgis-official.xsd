@@ -1,0 +1,491 @@
+<!-- edited with XMLSpy v2011 rel. 2 (http://www.altova.com) by TeaM DJiNN (TeaM DJiNN) -->
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified">
+    <xs:element name="root">
+        <xs:complexType>
+            <xs:sequence>
+                <xs:element name="protocol" maxOccurs="100">
+                    <xs:complexType>
+                        <xs:sequence>
+                            <xs:element name="DocId" type="xs:string">
+                                <xs:annotation>
+                                    <xs:documentation>Номер протокола</xs:documentation>
+                                </xs:annotation>
+                            </xs:element>
+                            <xs:element name="DocCreationDate" type="xs:date">
+                                <xs:annotation>
+                                    <xs:documentation>Дата протокола</xs:documentation>
+                                </xs:annotation>
+                            </xs:element>
+                            <xs:element name="DocStartDate" type="xs:date">
+                                <xs:annotation>
+                                    <xs:documentation>Дата начала проведения исследования (испытания), измерения</xs:documentation>
+                                </xs:annotation>
+                            </xs:element>
+                            <xs:element name="DocValidityDate" type="xs:date">
+                                <xs:annotation>
+                                    <xs:documentation>Дата окончания проведения исследования (испытания), измерения</xs:documentation>
+                                </xs:annotation>
+                            </xs:element>
+                            <xs:element name="DataStatusId" type="xs:int">
+                                <xs:annotation>
+                                    <xs:documentation>Идентификатор статуса данных протокола</xs:documentation>
+                                </xs:annotation>
+                            </xs:element>
+                            <xs:element name="ProtocolStatusId" type="xs:int">
+                                <xs:annotation>
+                                    <xs:documentation>Идентификатор статуса протокола</xs:documentation>
+                                </xs:annotation>
+                            </xs:element>
+                            <xs:element name="ProtocolScan" minOccurs="0">
+                                <xs:annotation>
+                                    <xs:documentation>Скан-копия протокола</xs:documentation>
+                                </xs:annotation>
+                                <xs:complexType>
+                                    <xs:sequence>
+                                        <xs:element name="Extension" type="xs:string"/>
+                                        <xs:element minOccurs="0" name="FileName" type="xs:string"/>
+                                        <xs:element name="Content" type="xs:base64Binary"/>
+                                    </xs:sequence>
+                                </xs:complexType>
+                            </xs:element>
+                            <xs:element name="AddressID" type="xs:int" minOccurs="0" maxOccurs="unbounded">
+                                <xs:annotation>
+                                    <xs:documentation>Идентификатор адреса проведения исследования (испытания), измерения</xs:documentation>
+                                </xs:annotation>
+                            </xs:element>
+                            <xs:element name="TerritoryFeature" type="xs:boolean" minOccurs="0">
+                                <xs:annotation>
+                                    <xs:documentation>Признак проведения исследования на территории заказчика</xs:documentation>
+                                </xs:annotation>
+                            </xs:element>
+                            <xs:element name="Address" minOccurs="0">
+                                <xs:complexType>
+                                    <xs:sequence>
+                                        <xs:element name="AddressDetails" maxOccurs="unbounded">
+                                            <xs:complexType>
+                                                <xs:sequence>
+                                                    <xs:element name="idCodeOksm" type="xs:string"/>
+                                                    <xs:element name="IdAddrType" type="xs:int"/>
+                                                    <xs:element name="idSubject" type="xs:string" minOccurs="0"/>
+                                                    <xs:element name="District" type="xs:string" minOccurs="0"/>
+                                                    <xs:element name="City" type="xs:string" minOccurs="0"/>
+                                                    <xs:element name="Locality" type="xs:string" minOccurs="0"/>
+                                                    <xs:element name="Street" type="xs:string" minOccurs="0"/>
+                                                    <xs:element name="House" type="xs:string" minOccurs="0"/>
+                                                    <xs:element name="Flat" type="xs:string" minOccurs="0"/>
+                                                    <xs:element name="UniqueAddress" type="xs:boolean"/>
+                                                    <xs:element name="UniqueAddressText" type="xs:string" minOccurs="0"/>
+                                                    <xs:element name="alienCity" type="xs:string" minOccurs="0"/>
+                                                    <xs:element name="alienDistrict" type="xs:string" minOccurs="0"/>
+                                                    <xs:element name="alienLocality" type="xs:string" minOccurs="0"/>
+                                                    <xs:element name="alienStreet" type="xs:string" minOccurs="0"/>
+                                                    <xs:element name="alienHouse" type="xs:string" minOccurs="0"/>
+                                                </xs:sequence>
+                                            </xs:complexType>
+                                        </xs:element>
+                                    </xs:sequence>
+                                </xs:complexType>
+                            </xs:element>
+                            <xs:element name="AdditionKindId" type="xs:string" minOccurs="0">
+                                <xs:annotation>
+                                    <xs:documentation>Идентификатор документа выданного взамен (в дополнение) протокола</xs:documentation>
+                                </xs:annotation>
+                            </xs:element>
+                            <xs:element name="AdditionKindDate" type="xs:date" minOccurs="0">
+                                <xs:annotation>
+                                    <xs:documentation>Дата документа</xs:documentation>
+                                </xs:annotation>
+                            </xs:element>
+                            <xs:element name="ApplicationDate" type="xs:date">
+                                <xs:annotation>
+                                    <xs:documentation>Дата подачи задания/заявки на проведение испытания/измерения</xs:documentation>
+                                </xs:annotation>
+                            </xs:element>
+                            <xs:element name="Customer">
+                                <xs:annotation>
+                                    <xs:documentation>Заказчик</xs:documentation>
+                                </xs:annotation>
+                                <xs:complexType>
+                                    <xs:sequence>
+                                        <xs:element name="CustomerKindId" type="xs:byte">
+                                            <xs:annotation>
+                                                <xs:documentation>Идентификатор типа заказчика</xs:documentation>
+                                            </xs:annotation>
+                                        </xs:element>
+                                        <xs:element name="DocId" type="xs:string" minOccurs="0">
+                                            <xs:annotation>
+                                                <xs:documentation>Номер аттестата аккредитации</xs:documentation>
+                                            </xs:annotation>
+                                        </xs:element>
+                                        <xs:element name="InnId" minOccurs="0">
+                                            <xs:annotation>
+                                                <xs:documentation>ИНН</xs:documentation>
+                                            </xs:annotation>
+                                            <xs:simpleType>
+                                                <xs:restriction base="xs:string"/>
+                                            </xs:simpleType>
+                                        </xs:element>
+                                        <xs:element name="OgrnId" type="xs:long" minOccurs="0">
+                                            <xs:annotation>
+                                                <xs:documentation>ОГРН/ОГРНИП</xs:documentation>
+                                            </xs:annotation>
+                                        </xs:element>
+                                        <xs:element name="FullNameDetails" type="xs:string" minOccurs="0">
+                                            <xs:annotation>
+                                                <xs:documentation>Полное наименование иностранного ЮЛ</xs:documentation>
+                                            </xs:annotation>
+                                        </xs:element>
+                                        <xs:element name="FioFl" type="xs:string" minOccurs="0">
+                                            <xs:annotation>
+                                                <xs:documentation>ФИО ФЛ</xs:documentation>
+                                            </xs:annotation>
+                                        </xs:element>
+                                        <xs:element name="Phones" minOccurs="0">
+                                            <xs:complexType>
+                                                <xs:sequence>
+                                                    <xs:element name="PhoneDetails" maxOccurs="unbounded">
+                                                        <xs:complexType>
+                                                            <xs:sequence>
+                                                                <xs:element name="Number" type="xs:string"/>
+                                                                <xs:element name="Annex" minOccurs="0" >
+                                                                    <xs:simpleType>
+                                                                        <xs:restriction base="xs:string">
+                                                                            <xs:pattern value="[0-9]{1,7}"/>
+                                                                        </xs:restriction>
+                                                                    </xs:simpleType>
+                                                                </xs:element>
+                                                                <xs:element name="IsRf" type="xs:boolean"/>
+                                                            </xs:sequence>
+                                                        </xs:complexType>
+                                                    </xs:element>
+                                                </xs:sequence>
+                                            </xs:complexType>
+                                        </xs:element>
+                                        <xs:element name="Emails" minOccurs="0">
+                                            <xs:complexType>
+                                                <xs:sequence>
+                                                    <xs:element name="Email" type="xs:string" maxOccurs="unbounded"/>
+                                                </xs:sequence>
+                                            </xs:complexType>
+                                        </xs:element>
+                                        <xs:element name="Address" minOccurs="0">
+                                            <xs:complexType>
+                                                <xs:sequence>
+                                                    <xs:element name="AddressDetails">
+                                                        <xs:complexType>
+                                                            <xs:sequence>
+                                                                <xs:element name="idCodeOksm" type="xs:string"/>
+                                                                <xs:element name="IdAddrType" type="xs:int"/>
+                                                                <xs:element name="idSubject" type="xs:string"
+                                                                            minOccurs="0"/>
+                                                                <xs:element name="District" type="xs:string"
+                                                                            minOccurs="0"/>
+                                                                <xs:element name="City" type="xs:string" minOccurs="0"/>
+                                                                <xs:element name="Locality" type="xs:string"
+                                                                            minOccurs="0"/>
+                                                                <xs:element name="Street" type="xs:string"
+                                                                            minOccurs="0"/>
+                                                                <xs:element name="House" type="xs:string"
+                                                                            minOccurs="0"/>
+                                                                <xs:element name="Flat" type="xs:string" minOccurs="0"/>
+                                                                <xs:element name="UniqueAddress" type="xs:boolean"/>
+                                                                <xs:element name="UniqueAddressText" type="xs:string"
+                                                                            minOccurs="0"/>
+                                                                <xs:element name="alienCity" type="xs:string"
+                                                                            minOccurs="0"/>
+                                                                <xs:element name="alienDistrict" type="xs:string"
+                                                                            minOccurs="0"/>
+                                                                <xs:element name="alienLocality" type="xs:string"
+                                                                            minOccurs="0"/>
+                                                                <xs:element name="alienStreet" type="xs:string"
+                                                                            minOccurs="0"/>
+                                                                <xs:element name="alienHouse" type="xs:string"
+                                                                            minOccurs="0"/>
+                                                            </xs:sequence>
+                                                        </xs:complexType>
+                                                    </xs:element>
+                                                </xs:sequence>
+                                            </xs:complexType>
+                                        </xs:element>
+                                    </xs:sequence>
+                                </xs:complexType>
+                            </xs:element>
+                            <xs:element name="AccredScope353" type="xs:boolean" minOccurs="0">
+                                <xs:annotation>
+                                    <xs:documentation>Протокол выдан в рамках прохождения процедуры Расширения области аккредитации на основании п.8 Приложения №17 постановления Правительства РФ № 353</xs:documentation>
+                                </xs:annotation>
+                            </xs:element>
+                            <xs:element name="NoEquipmentInfo" type="xs:boolean" minOccurs="0">
+                                <xs:annotation>
+                                    <xs:documentation>Указание сведений об оборудовании, использованном при проведении испытаний (исследований), измерений не предусмотрено (Оборудование не использовалось)</xs:documentation>
+                                </xs:annotation>
+                            </xs:element>
+                            <xs:element name="Equipment" minOccurs="0">
+                                <xs:complexType>
+                                    <xs:sequence>
+                                        <xs:element name="EquipmentDetails" maxOccurs="unbounded">
+                                            <xs:complexType>
+                                                <xs:sequence>
+                                                    <xs:element name="EquipmentId" type="xs:unsignedLong"/>
+                                                </xs:sequence>
+                                            </xs:complexType>
+                                        </xs:element>
+                                    </xs:sequence>
+                                </xs:complexType>
+                            </xs:element>
+                            <xs:element name="ApprovedUser" minOccurs="0">
+                                <xs:annotation>
+                                    <xs:documentation>Сведения о лицах, проводивших испытания (исследования), измерения, утвердивших и подписавших протокол</xs:documentation>
+                                </xs:annotation>
+                                <xs:complexType>
+                                    <xs:sequence>
+                                        <xs:element name="ApprovedUserDetails" maxOccurs="unbounded">
+                                            <xs:complexType>
+                                                <xs:sequence>
+                                                    <xs:element name="idFullName" type="xs:int">
+                                                        <xs:annotation>
+                                                            <xs:documentation>ФИО</xs:documentation>
+                                                        </xs:annotation>
+                                                    </xs:element>
+                                                    <xs:element name="PostName" type="xs:string">
+                                                        <xs:annotation>
+                                                            <xs:documentation>Должность(Выполняемые функции)
+                                                            </xs:documentation>
+                                                        </xs:annotation>
+                                                    </xs:element>
+                                                    <xs:element name="idRoleName" type="xs:byte" maxOccurs="unbounded">
+                                                        <xs:annotation>
+                                                            <xs:documentation>Роль</xs:documentation>
+                                                        </xs:annotation>
+                                                    </xs:element>
+                                                </xs:sequence>
+                                            </xs:complexType>
+                                        </xs:element>
+                                    </xs:sequence>
+                                </xs:complexType>
+                            </xs:element>
+                            <xs:element name="ObjectInfo">
+                                <xs:annotation>
+                                    <xs:documentation>Сведения об объекте и результатах проведенных испытаний (исследований), измерений</xs:documentation>
+                                </xs:annotation>
+                                <xs:complexType>
+                                    <xs:sequence>
+                                        <xs:element name="TypeObjectId" type="xs:int">
+                                            <xs:annotation>
+                                                <xs:documentation>Идентификатор типа объекта исследования (испытания), измерения</xs:documentation>
+                                            </xs:annotation>
+                                        </xs:element>
+                                        <xs:element name="MethodDocId" type="xs:int" minOccurs="0" maxOccurs="unbounded">
+                                            <xs:annotation>
+                                                <xs:documentation>Идентификатор нормативного документа, устанавливающего требования к объекту</xs:documentation>
+                                            </xs:annotation>
+                                        </xs:element>
+                                        <xs:element name="ModelGetDate" type="xs:date" minOccurs="0">
+                                            <xs:annotation>
+                                                <xs:documentation>Дата получения образца</xs:documentation>
+                                            </xs:annotation>
+                                        </xs:element>
+                                        <xs:element name="FullNameObject" type="xs:string">
+                                            <xs:annotation>
+                                                <xs:documentation>Полное наименование объекта</xs:documentation>
+                                            </xs:annotation>
+                                        </xs:element>
+                                        <xs:element name="SamplesCount" type="xs:string" minOccurs="0">
+                                            <xs:annotation>
+                                                <xs:documentation>Количество испытуемых образцов</xs:documentation>
+                                            </xs:annotation>
+                                        </xs:element>
+                                        <xs:element name="ResearchObject" minOccurs="0">
+                                            <xs:annotation>
+                                                <xs:documentation>Сведения об испытаниях (исследованиях), измерениях</xs:documentation>
+                                            </xs:annotation>
+                                            <xs:complexType>
+                                                <xs:sequence>
+                                                    <xs:element name="ResearchObjectInfo" maxOccurs="unbounded">
+                                                        <xs:complexType>
+                                                            <xs:sequence>
+                                                                <xs:element name="IndicatorId" type="xs:string" minOccurs="0">
+                                                                    <xs:annotation>
+                                                                        <xs:documentation>Идентификатор показателя</xs:documentation>
+                                                                    </xs:annotation>
+                                                                </xs:element>
+                                                                <xs:element name="UniqueIndicator" type="xs:string" minOccurs="0">
+                                                                    <xs:annotation>
+                                                                        <xs:documentation>Иной показатель (Заполняется, если отсутствует в справочнике)</xs:documentation>
+                                                                    </xs:annotation>
+                                                                </xs:element>
+                                                                <xs:element name="Directory" type="xs:string" minOccurs="0">
+                                                                    <xs:annotation>
+                                                                        <xs:documentation>Идентификатор справочника</xs:documentation>
+                                                                    </xs:annotation>
+                                                                </xs:element>
+                                                                <xs:element name="FactValue" type="xs:string">
+                                                                    <xs:annotation>
+                                                                        <xs:documentation>Фактическое значение показателя</xs:documentation>
+                                                                    </xs:annotation>
+                                                                </xs:element>
+                                                                <xs:element name="MeasurementId" type="xs:string" minOccurs="0">
+                                                                    <xs:annotation>
+                                                                        <xs:documentation>Идентификатор единицы измерения</xs:documentation>
+                                                                    </xs:annotation>
+                                                                </xs:element>
+                                                                <xs:element name="UniqueMeasurement" type="xs:string" minOccurs="0">
+                                                                    <xs:annotation>
+                                                                        <xs:documentation>Комментарий для единицы измерения</xs:documentation>
+                                                                    </xs:annotation>
+                                                                </xs:element>
+                                                                <xs:element name="DocNameId" type="xs:string" minOccurs="0">
+                                                                    <xs:annotation>
+                                                                        <xs:documentation>Идентификатор нормативного документа (метод проведения испытаний/измерений)</xs:documentation>
+                                                                    </xs:annotation>
+                                                                </xs:element>
+                                                                <xs:element name="UniqueMethod" type="xs:string" minOccurs="0">
+                                                                    <xs:annotation>
+                                                                        <xs:documentation>Иной метод проведения испытаний/измерений (Заполняется, если нормативный документ отсутствует в справочнике)</xs:documentation>
+                                                                    </xs:annotation>
+                                                                </xs:element>
+                                                                <xs:element name="DocNameMethodikId" type="xs:string" minOccurs="0">
+                                                                    <xs:annotation>
+                                                                        <xs:documentation>Идентификатор нормативного документа (методика проведения испытаний/измерений)</xs:documentation>
+                                                                    </xs:annotation>
+                                                                </xs:element>
+                                                                <xs:element name="UniqueMethodik" type="xs:string" minOccurs="0">
+                                                                    <xs:annotation>
+                                                                        <xs:documentation>Иная методика проведения испытаний/измерений (Заполняется, если нормативный документ отсутствует в справочнике)</xs:documentation>
+                                                                    </xs:annotation>
+                                                                </xs:element>
+                                                            </xs:sequence>
+                                                        </xs:complexType>
+                                                    </xs:element>
+                                                </xs:sequence>
+                                            </xs:complexType>
+                                        </xs:element>
+                                        <xs:element name="IsLab" type="xs:boolean">
+                                            <xs:annotation>
+                                                <xs:documentation>Сведения об образце отобранным испытательной лабораторией</xs:documentation>
+                                            </xs:annotation>
+                                        </xs:element>
+                                        <xs:element name="LabSelectionDate" type="xs:date" minOccurs="0">
+                                            <xs:annotation>
+                                                <xs:documentation>Дата отбора образца</xs:documentation>
+                                            </xs:annotation>
+                                        </xs:element>
+                                        <xs:element name="LabSelectionAddress" minOccurs="0">
+                                            <xs:annotation>
+                                                <xs:documentation>Сведения об образце отобранным испытательной
+                                                    лабораторией
+                                                </xs:documentation>
+                                            </xs:annotation>
+                                            <xs:complexType>
+                                                <xs:sequence>
+                                                    <xs:element name="AddressDetails">
+                                                        <xs:complexType>
+                                                            <xs:sequence>
+                                                                <xs:element name="idCodeOksm" type="xs:string"/>
+                                                                <xs:element name="IdAddrType" type="xs:int"/>
+                                                                <xs:element name="idSubject" type="xs:string"
+                                                                            minOccurs="0"/>
+                                                                <xs:element name="District" type="xs:string"
+                                                                            minOccurs="0"/>
+                                                                <xs:element name="City" type="xs:string" minOccurs="0"/>
+                                                                <xs:element name="Locality" type="xs:string"
+                                                                            minOccurs="0"/>
+                                                                <xs:element name="Street" type="xs:string"
+                                                                            minOccurs="0"/>
+                                                                <xs:element name="House" type="xs:string"
+                                                                            minOccurs="0"/>
+                                                                <xs:element name="Flat" type="xs:string" minOccurs="0"/>
+                                                                <xs:element name="UniqueAddress" type="xs:boolean"/>
+                                                                <xs:element name="UniqueAddressText" type="xs:string"
+                                                                            minOccurs="0"/>
+                                                                <xs:element name="alienCity" type="xs:string"
+                                                                            minOccurs="0"/>
+                                                                <xs:element name="alienDistrict" type="xs:string"
+                                                                            minOccurs="0"/>
+                                                                <xs:element name="alienLocality" type="xs:string"
+                                                                            minOccurs="0"/>
+                                                                <xs:element name="alienStreet" type="xs:string"
+                                                                            minOccurs="0"/>
+                                                                <xs:element name="alienHouse" type="xs:string"
+                                                                            minOccurs="0"/>
+                                                            </xs:sequence>
+                                                        </xs:complexType>
+                                                    </xs:element>
+                                                </xs:sequence>
+                                            </xs:complexType>
+                                        </xs:element>
+                                        <xs:element name="IsAnotherDoc" type="xs:boolean">
+                                            <xs:annotation>
+                                                <xs:documentation>Иной нормативный документ</xs:documentation>
+                                            </xs:annotation>
+                                        </xs:element>
+                                        <xs:element name="AnotherDoc" minOccurs="0">
+                                            <xs:annotation>
+                                                <xs:documentation>Сведения об иных нормативных документах
+                                                </xs:documentation>
+                                            </xs:annotation>
+                                            <xs:complexType>
+                                                <xs:sequence>
+                                                    <xs:element name="AnotherDocDetails" maxOccurs="unbounded">
+                                                        <xs:complexType>
+                                                            <xs:sequence>
+                                                                <xs:element name="AnotherDocName" type="xs:string">
+                                                                    <xs:annotation>
+                                                                        <xs:documentation>Наименование иного
+                                                                            нормативного документа
+                                                                        </xs:documentation>
+                                                                    </xs:annotation>
+                                                                </xs:element>
+                                                                <xs:element name="AnotherDocNumber" type="xs:string">
+                                                                    <xs:annotation>
+                                                                        <xs:documentation>Номер иного нормативного
+                                                                            документа
+                                                                        </xs:documentation>
+                                                                    </xs:annotation>
+                                                                </xs:element>
+                                                            </xs:sequence>
+                                                        </xs:complexType>
+                                                    </xs:element>
+                                                </xs:sequence>
+                                            </xs:complexType>
+                                        </xs:element>
+                                        <xs:element name="Conditions" minOccurs="0" maxOccurs="unbounded">
+                                            <xs:annotation>
+                                                <xs:documentation>Сведения об условиях проведения исследования (испытания), измерения</xs:documentation>
+                                            </xs:annotation>
+                                            <xs:complexType>
+                                                <xs:sequence>
+                                                    <xs:element name="ConditionsDetails" maxOccurs="unbounded">
+                                                        <xs:complexType>
+                                                            <xs:sequence>
+                                                                <xs:element name="ConditionId" type="xs:string" minOccurs="0">
+                                                                    <xs:annotation>
+                                                                        <xs:documentation>Идентификатор показателя условий исследования (испытания), измерения</xs:documentation>
+                                                                    </xs:annotation>
+                                                                </xs:element>
+                                                                <xs:element name="ActualValue" type="xs:float" minOccurs="0">
+                                                                    <xs:annotation>
+                                                                        <xs:documentation>Фактическое значение во время исследования (испытания), измерения</xs:documentation>
+                                                                    </xs:annotation>
+                                                                </xs:element>
+                                                                <xs:element name="MeasurementId" type="xs:string" minOccurs="0">
+                                                                    <xs:annotation>
+                                                                        <xs:documentation>Идентификатор единицы измерения</xs:documentation>
+                                                                    </xs:annotation>
+                                                                </xs:element>
+                                                            </xs:sequence>
+                                                        </xs:complexType>
+                                                    </xs:element>
+                                                </xs:sequence>
+                                            </xs:complexType>
+                                        </xs:element>
+                                    </xs:sequence>
+                                </xs:complexType>
+                            </xs:element>
+                        </xs:sequence>
+                    </xs:complexType>
+                </xs:element>
+            </xs:sequence>
+        </xs:complexType>
+    </xs:element>
+</xs:schema>

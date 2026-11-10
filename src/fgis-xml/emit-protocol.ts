@@ -131,6 +131,8 @@ function emitResearch(result: ProtocolResult, ctx: ProtocolXmlContext): string {
   const docNameId = methodikId != null ? String(methodikId) : ''
   const uniqueMethod = methodikId != null ? '' : methodikText
 
+  const methodikDocId = oa?.methodFgisId != null ? String(oa.methodFgisId) : ''
+
   const unit = result.unitSymbol
     ? ctx.unitsBySymbol.get(result.unitSymbol)
     : undefined
@@ -143,19 +145,10 @@ function emitResearch(result: ProtocolResult, ctx: ProtocolXmlContext): string {
     el('MeasurementId', unit?.fgisId ?? ''),
     el('DocNameId', docNameId),
     el('UniqueMethod', uniqueMethod),
-    el('DocNameMethodikId', oa?.methodFgisId != null ? String(oa.methodFgisId) : ''),
-    el('IsLab', false),
-    el('IsAnotherDoc', true),
-    wrap(
-      'AnotherDoc',
-      wrap(
-        'AnotherDocDetails',
-        [el('AnotherDocName', '-'), el('AnotherDocNumber', '-')].join(''),
-      ),
-    ),
+    el('DocNameMethodikId', methodikDocId),
   ].join('')
 
-  return wrap('ResearchObject', wrap('ResearchObjectInfo', info))
+  return wrap('ResearchObjectInfo', info)
 }
 
 /**
@@ -190,13 +183,15 @@ export function emitProtocolXml(ctx: ProtocolXmlContext): string {
         el('Content', content),
       ].join(''),
     ),
-    el('TerritoryFeature', territory),
   ]
 
+  // Официальная XSD: AddressID стоит перед TerritoryFeature, Address — после.
+  if (!territory) {
+    parts.push(el('AddressID', labAddressId(ctx.settings)))
+  }
+  parts.push(el('TerritoryFeature', territory))
   if (territory) {
     parts.push(wrap('Address', addressDetails(3, measureAddr)))
-  } else {
-    parts.push(el('AddressID', labAddressId(ctx.settings)))
   }
 
   parts.push(el('ApplicationDate', p.applicationDate ?? ''))
@@ -224,9 +219,24 @@ export function emitProtocolXml(ctx: ProtocolXmlContext): string {
   const results = [...ctx.results]
     .filter((r) => r.includeInXml)
     .sort((a, b) => a.seq - b.seq)
-  for (const r of results) {
-    objectParts.push(emitResearch(r, ctx))
+  // Официальная XSD: один ResearchObject со всеми ResearchObjectInfo,
+  // IsLab / IsAnotherDoc / AnotherDoc — один раз на уровне ObjectInfo.
+  if (results.length > 0) {
+    objectParts.push(
+      wrap('ResearchObject', results.map((r) => emitResearch(r, ctx)).join('')),
+    )
   }
+  objectParts.push(el('IsLab', false))
+  objectParts.push(el('IsAnotherDoc', true))
+  objectParts.push(
+    wrap(
+      'AnotherDoc',
+      wrap(
+        'AnotherDocDetails',
+        [el('AnotherDocName', '-'), el('AnotherDocNumber', '-')].join(''),
+      ),
+    ),
+  )
 
   parts.push(wrap('ObjectInfo', objectParts.join('')))
 

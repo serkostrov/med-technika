@@ -365,7 +365,7 @@ describe('Загрузка: SHA-256 и save', () => {
     detail = api.getProtocolDetail(eng, saved.id)
     expect(detail.xmlPreview).toContain('<FullNameObject>')
     expect(detail.xmlPreview).toMatch(/Дефибрилляторы/)
-    expect(detail.xmlPreview.match(/<ResearchObject>/g)?.length).toBe(43)
+    expect(detail.xmlPreview.match(/<ResearchObjectInfo>/g)?.length).toBe(43)
   })
 
   it('замена по номеру+дате до выгрузки', async () => {
