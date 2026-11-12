@@ -44,6 +44,12 @@ export type SheetGrid = {
   cells: Map<number, Map<number, SheetCell>>
   maxRow: number
   maxCol: number
+  /** Скрытые строки Excel: не печатаются в протоколе → не выгружаются (эталон 29-26-Ш). */
+  hiddenRows?: ReadonlySet<number>
+}
+
+export function isRowHidden(grid: SheetGrid, r: number): boolean {
+  return grid.hiddenRows?.has(r) ?? false
 }
 
 export function encodeCell(r: number, c: number): string {

@@ -18,10 +18,11 @@ function readAb(path: string): ArrayBuffer {
   return buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength) as ArrayBuffer
 }
 
-const FACTS = ['50,0', '51,2', '44,8', '46,0', '46,0', '47,2', '51,2', '52,5', '54,5', '55,7']
+// места 4–5 в Excel есть, но строки скрыты → в протокол и ФГИС не идут
+const FACTS = ['50,0', '51,2', '44,8', '46,0', '46,0', '47,2']
 
 describe('26-Ш шум (ГОСТ ISO 9612) — боевой 29-26-Ш', () => {
-  it('разбор: 5 рабочих мест × (LEX,8h + фактическая смена), шапка, 5 СИ', () => {
+  it('разбор: 3 видимых рабочих места × (LEX,8h + фактическая смена), шапка, 5 СИ', () => {
     const seed = createSeedBundle()
     const parsed = parseProtocol({
       data: readAb(XLSX_PATH),
@@ -40,12 +41,10 @@ describe('26-Ш шум (ГОСТ ISO 9612) — боевой 29-26-Ш', () => {
       'Стоматологический кабинет №1, рабочее место врача',
       'Гинекологический кабинет №2, рабочее место врача',
       'Рентген кабинет, рабочее место рентгенолаборанта',
-      'Помещение № 114, рабочее место стоматолога-терапевта',
-      'Зуботехнический кабинет. Рабочее место техника.',
     ])
     expect(parsed.results.map((r) => r.factValue)).toEqual(FACTS)
     expect(parsed.results.map((r) => r.sourceKey)).toEqual(
-      Array.from({ length: 5 }, () => ['laeq_8h', 'laeq_shift']).flat(),
+      Array.from({ length: 3 }, () => ['laeq_8h', 'laeq_shift']).flat(),
     )
     expect(parsed.results.every((r) => r.unitSymbol === 'дБА')).toBe(true)
     expect(parsed.equipment.map((e) => e.serialRaw)).toEqual([
@@ -133,29 +132,16 @@ describe('26-Ш шум (ГОСТ ISO 9612) — боевой 29-26-Ш', () => {
     api.updateProtocol(head, saved.id, { applicationDate: '2026-08-31' })
 
     const detail = api.getProtocolDetail(head, saved.id)
-    expect(detail.results.filter((r) => r.oaItemId)).toHaveLength(10)
+    expect(detail.results.filter((r) => r.oaItemId)).toHaveLength(6)
     const actual = detail.xmlPreview
     const expected = readFileSync(XML_PATH, 'utf8')
 
-    // В эталоне клиента в ФГИС ушли только первые 3 рабочих места (6 значений),
-    // в Excel их 5 — сравниваем ResearchObjectInfo поштучно, остальное целиком.
-    const infos = (xml: string) =>
-      [...canonicalizeFgisXml(xml).matchAll(/<ResearchObjectInfo>.*?<\/ResearchObjectInfo>/g)].map(
-        (m) => m[0],
+    // хвостовой пробел FullNameObject в эталоне — из ячейки Excel
+    const norm = (xml: string) =>
+      canonicalizeFgisXml(xml).replace(
+        /<FullNameObject>(.*?)<\/FullNameObject>/,
+        (_m, t: string) => `<FullNameObject>${t.trim()}</FullNameObject>`,
       )
-    const actualInfos = infos(actual)
-    const expectedInfos = infos(expected)
-    expect(actualInfos).toHaveLength(10)
-    expect(expectedInfos).toHaveLength(6)
-    expect(actualInfos.slice(0, 6)).toEqual(expectedInfos)
-
-    const shell = (xml: string) =>
-      canonicalizeFgisXml(xml)
-        .replace(/<ResearchObject>.*?<\/ResearchObject>/, '<ResearchObject/>')
-        // в эталоне хвостовой пробел из ячейки Excel
-        .replace(/<FullNameObject>(.*?)<\/FullNameObject>/, (_m, t: string) =>
-          `<FullNameObject>${t.trim()}</FullNameObject>`,
-        )
-    expect(shell(actual)).toBe(shell(expected))
+    expect(norm(actual)).toBe(norm(expected))
   })
 })

@@ -13,6 +13,8 @@ export function loadWorkbookGrids(data: ArrayBuffer): SheetGrid[] {
   const wb = XLSX.read(data, {
     type: 'array',
     cellNF: true,
+    // нужно для !rows[].hidden
+    cellStyles: true,
     cellDates: false,
     raw: false,
   })
@@ -25,6 +27,10 @@ export function loadWorkbookGrids(data: ArrayBuffer): SheetGrid[] {
     if (!sheet) {
       return { name, cells, maxRow, maxCol }
     }
+    const hiddenRows = new Set<number>()
+    ;(sheet['!rows'] ?? []).forEach((row, r) => {
+      if (row?.hidden) hiddenRows.add(r)
+    })
     const ref = sheet['!ref']
     if (ref) {
       const range = XLSX.utils.decode_range(ref)
@@ -49,7 +55,7 @@ export function loadWorkbookGrids(data: ArrayBuffer): SheetGrid[] {
         }
       }
     }
-    return { name, cells, maxRow, maxCol }
+    return { name, cells, maxRow, maxCol, hiddenRows }
   })
 }
 

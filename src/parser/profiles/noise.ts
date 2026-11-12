@@ -5,6 +5,7 @@ import {
   cellNumber,
   cellText,
   getCell,
+  isRowHidden,
   type SheetGrid,
 } from '../sheet-utils'
 import type { ParsedObject, ParsedResult } from '../types'
@@ -82,6 +83,8 @@ export function parseNoise(grid: SheetGrid): {
 
   let objectSeq = 0
   for (let r = headerRow + 1; r <= grid.maxRow; r++) {
+    // скрытые строки шаблона (лишние рабочие места) в протокол не печатаются
+    if (isRowHidden(grid, r)) continue
     const label = cellText(grid, r, NOISE_COL.label)
     if (!label) continue
     if (isTableEnd(norm(label))) break

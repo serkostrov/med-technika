@@ -6,6 +6,7 @@ import {
   cellNumber,
   cellText,
   getCell,
+  isRowHidden,
   type SheetGrid,
 } from '../sheet-utils'
 import type { ParsedObject, ParsedResult } from '../types'
@@ -68,6 +69,7 @@ export function parsePhysioDf(
   const objectBySerial = new Map<string, number>()
 
   for (let r = 0; r <= grid.maxRow; r++) {
+    if (isRowHidden(grid, r)) continue
     const a = cellText(grid, r, COL.A)
     const block = rowDetectBlock(grid, r)
     if (block) {

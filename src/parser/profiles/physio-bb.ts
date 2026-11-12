@@ -6,6 +6,7 @@ import {
   cellNumber,
   cellText,
   getCell,
+  isRowHidden,
   type SheetGrid,
 } from '../sheet-utils'
 import type { ParsedObject, ParsedResult } from '../types'
@@ -66,6 +67,7 @@ export function parsePhysioBb(
   const objectKey = new Map<string, number>()
 
   for (let r = headerRow + 1; r <= grid.maxRow; r++) {
+    if (isRowHidden(grid, r)) continue
     const a = cellText(grid, r, COL.A).trim()
     const ac = cellText(grid, r, COL.AC)
 
