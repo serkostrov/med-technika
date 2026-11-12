@@ -10,7 +10,8 @@ import {
   realXlsx,
 } from '@/parser/fixtures/real-reference.test-utils'
 
-describe('26-ПЧ ЭМП (ФР.1.34.2021.39109) — боевой 52-26-ПЧ', () => {
+// разбор реального xlsx + bootstrap сервера — дольше 5 с при параллельном прогоне
+describe('26-ПЧ ЭМП (ФР.1.34.2021.39109) — боевой 52-26-ПЧ', { timeout: 30_000 }, () => {
   it('разбор: 1 видимое рабочее место × 4 показателя × 3 высоты; скрытые таблица и СИ пропущены', () => {
     const seed = createSeedBundle()
     const parsed = parseProtocol({

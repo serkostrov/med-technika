@@ -95,8 +95,21 @@ export const SEED_PROTOCOL_FORMS: readonly ProtocolForm[] = [
   ...formBatch(8, 'шаблон-26-АС', 'vent', [
     'Протокол lite',
     'Протокол МР 4.3.0212-20',
-    'Протокол МР 4.3.0212-20 (LITE)',
   ]),
+  {
+    id: SeedIds.formVentLite,
+    kindId: 8,
+    templateFile: 'шаблон-26-АС',
+    sheetName: 'Протокол МР 4.3.0212-20 (LITE)',
+    title: 'Протокол МР 4.3.0212-20 (LITE)',
+    parserProfile: 'vent',
+    status: FormStatus.ready,
+    // вентиляционные системы — TypeObjectId 8, показатели с IndicatorId (эталон 260-26-АС)
+    typeObjectId: 8,
+    fgisDirectory: 'DM-55254',
+    conditionsLimits: null,
+    settings: { numberSuffix: 'АС' },
+  },
   // Прил. Б: 3 формы — МИ / ГОСТ / БВЕК (раньше — одна запись с составным именем листа)
   {
     id: SeedIds.formMicroMi,
