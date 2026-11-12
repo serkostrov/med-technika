@@ -118,6 +118,27 @@ export const SEED_OA_ITEMS: readonly OaItem[] = [
     objectName: null,
     deletedAt: null,
   },
+  {
+    // 26-Ш: показатель без кода ФГИС (UniqueIndicator), DocNameId/DocNameMethodikId — по эталону 29-26-Ш
+    id: SeedIds.oaItemNoiseLeq,
+    editionId: SeedIds.oaEditionCurrent,
+    itemNo: '—',
+    methodikText: 'ГОСТ ISO 9612-2016',
+    methodikFgisId: 29564,
+    methodText: null,
+    methodFgisId: 496,
+    objectType: 'Рабочие места',
+    indicatorText: 'Эквивалентный уровень звука',
+    indicatorFgisId: null,
+    unitText: 'дБА',
+    unitFgisId: '429',
+    rangeText: null,
+    rangeMin: null,
+    rangeMax: null,
+    isCalculated: false,
+    objectName: null,
+    deletedAt: null,
+  },
 ]
 
 /** Эталонные сопоставления ТЗ §7.4 + uB из §6.5 где указаны. */
@@ -162,6 +183,20 @@ export const SEED_FORM_INDICATOR_MAPS: readonly FormIndicatorMap[] = [
     formId: SeedIds.formDf,
     sourceKey: 'interval',
     oaItemId: SeedIds.oaItemDfInterval,
+    ub: null,
+  },
+  {
+    id: '44444444-4444-4444-8444-444444444407',
+    formId: SeedIds.formNoise,
+    sourceKey: 'laeq_8h',
+    oaItemId: SeedIds.oaItemNoiseLeq,
+    ub: null,
+  },
+  {
+    id: '44444444-4444-4444-8444-444444444408',
+    formId: SeedIds.formNoise,
+    sourceKey: 'laeq_shift',
+    oaItemId: SeedIds.oaItemNoiseLeq,
     ub: null,
   },
 ]

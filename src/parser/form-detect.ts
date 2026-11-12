@@ -10,6 +10,7 @@ import {
   type SheetGrid,
 } from './sheet-utils'
 import type { FormCandidate, FormDetectionResult } from './types'
+import { isImplementedProfile } from './profiles/registry'
 
 function extractProtocolLine(
   grid: SheetGrid,
@@ -43,8 +44,7 @@ export function detectForm(
     (f) =>
       f.status === FormStatus.ready ||
       f.status === FormStatus.in_progress ||
-      f.parserProfile === 'physio-bb' ||
-      f.parserProfile === 'physio-df',
+      isImplementedProfile(f.parserProfile),
   )
 
   const candidates: FormCandidate[] = []
@@ -59,13 +59,7 @@ export function detectForm(
 
     // Профили без материалов не разбираем, кроме ready
     if (form.status === FormStatus.no_materials) continue
-    if (
-      form.parserProfile !== 'physio-bb' &&
-      form.parserProfile !== 'physio-df'
-    ) {
-      // архитектурная точка расширения — не имитируем
-      continue
-    }
+    if (!isImplementedProfile(form.parserProfile)) continue
 
     const proto = extractProtocolLine(grid)
     if (!proto) continue

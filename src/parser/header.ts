@@ -2,6 +2,8 @@ import { EquipmentKind } from '@/domain'
 import { normalizeText } from '@/dictionaries/normalize/text'
 import {
   COL,
+  HEADER_MAX_COL,
+  cellNumber,
   cellText,
   extractPhoneDigits,
   findAnchorRows,
@@ -23,7 +25,7 @@ function rowListText(grid: SheetGrid, r: number): string {
   const aRaw = cellText(grid, r, COL.A)
   const right = valueRightOf(grid, r)
   // numbered list often in A itself
-  if (/^\d+[\).]/.test(aRaw)) {
+  if (/^\d+[).]/.test(aRaw)) {
     return (aRaw + (right ? ' ' + right : '')).trim()
   }
   return (right || aRaw).trim()
@@ -42,11 +44,13 @@ function collectListUntilNextAnchor(
   const lines: string[] = []
   let buf = ''
   for (let r = startRow + 1; r <= grid.maxRow; r++) {
-    const aNorm = normalizeText(cellText(grid, r, COL.A)).toLowerCase()
-    if (aNorm && stops.some((s) => aNorm.includes(s))) break
     const full = rowListText(grid, r)
     if (!full) continue
-    const startsItem = /^\d+[\).]/.test(full)
+    const startsItem = /^\d+[).]/.test(full)
+    // стоп — только строка-подпись следующего раздела; внутри текста пункта
+    // («…при нормальных условиях…», «…температуры…») слова-стопы встречаются
+    const aNorm = normalizeText(cellText(grid, r, COL.A)).toLowerCase()
+    if (!startsItem && aNorm && stops.some((s) => aNorm.startsWith(s))) break
     if (startsItem) {
       if (buf) lines.push(buf)
       buf = full
@@ -75,7 +79,7 @@ function cleanSerial(raw: string | null | undefined): string | null {
 }
 
 function parseSiLine(line: string): ParsedEquipment | null {
-  const cleaned = line.replace(/^\d+[\).]\s*/, '').trim()
+  const cleaned = line.replace(/^\d+[).]\s*/, '').trim()
   if (!cleaned) return null
   const m = SI_LINE_RE.exec(cleaned)
   if (m) {
@@ -114,7 +118,7 @@ function parseSiLine(line: string): ParsedEquipment | null {
 }
 
 function parseAuxLine(line: string, kind: typeof EquipmentKind.aux | typeof EquipmentKind.test): ParsedEquipment {
-  const cleaned = line.replace(/^\d+[\).]\s*/, '').trim()
+  const cleaned = line.replace(/^\d+[).]\s*/, '').trim()
   const simple = /^(.*?)\s+зав\.?\s*№\s*(\S+)/i.exec(cleaned)
   return {
     seq: 0,
@@ -176,19 +180,43 @@ function parsePlaceBlock(grid: SheetGrid, startRow: number): {
   return { place, address }
 }
 
+const CONDITION_LABELS: { key: 't' | 'rh' | 'p'; re: RegExp }[] = [
+  { key: 't', re: /^температура/ },
+  { key: 'rh', re: /^(отн\.?\s*|относительная\s+)?влажность/ },
+  { key: 'p', re: /^(атмосферное\s+)?давление|^атмосферн/ },
+]
+
+/** Подпись условия в любой ячейке строки → первое число правее (26-МТ: по строкам; 26-Ш: в одну строку). */
+function scanInlineConditions(
+  grid: SheetGrid,
+  r: number,
+  conditions: ParsedMetadata['conditions'],
+): void {
+  for (let c = 0; c <= HEADER_MAX_COL; c++) {
+    const label = normalizeText(cellText(grid, r, c)).toLowerCase()
+    if (!label) continue
+    const hit = CONDITION_LABELS.find((l) => l.re.test(label))
+    if (!hit) continue
+    for (let c2 = c + 1; c2 <= HEADER_MAX_COL; c2++) {
+      const n = cellNumber(grid, r, c2)
+      if (n != null) {
+        conditions[hit.key] = n
+        break
+      }
+      const t = cellText(grid, r, c2)
+      // следующая подпись раньше числа — значения нет
+      if (t && CONDITION_LABELS.some((l) => l.re.test(normalizeText(t).toLowerCase()))) break
+    }
+  }
+}
+
 function parseConditions(grid: SheetGrid): ParsedMetadata['conditions'] {
   const conditions: ParsedMetadata['conditions'] = { voltages: [] }
   for (let r = 0; r <= grid.maxRow; r++) {
     const a = normalizeText(cellText(grid, r, COL.A)).toLowerCase()
     const val = valueRightOf(grid, r)
-    const num = Number(val.replace(',', '.').replace(/[^\d.\-]/g, ''))
-    if (a.includes('температура')) {
-      if (Number.isFinite(num)) conditions.t = num
-    } else if (a.includes('влажность')) {
-      if (Number.isFinite(num)) conditions.rh = num
-    } else if (a.includes('атмосферн') || a.includes('давление')) {
-      if (Number.isFinite(num)) conditions.p = num
-    } else if (a.includes('напряжение сети')) {
+    const num = Number(val.replace(',', '.').replace(/[^\d.-]/g, ''))
+    if (a.includes('напряжение сети')) {
       const isStart = a.includes('начал')
       const isEnd = a.includes('конц')
       if (!conditions.voltages) conditions.voltages = []
@@ -201,6 +229,8 @@ function parseConditions(grid: SheetGrid): ParsedMetadata['conditions'] {
       } else if (Number.isFinite(num)) {
         conditions.voltages.push({ start: num })
       }
+    } else {
+      scanInlineConditions(grid, r, conditions)
     }
   }
   return conditions

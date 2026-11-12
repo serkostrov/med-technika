@@ -8,6 +8,8 @@ export const SEED_UNITS: readonly Unit[] = [
   { fgisId: '716', name: 'миллиампер', symbol: 'мА' },
   { fgisId: '58', name: 'джоуль', symbol: 'Дж' },
   { fgisId: '96', name: 'секунда', symbol: 'с' },
+  // 26-Ш: MeasurementId 429 из эталонной выгрузки 29-26-Ш
+  { fgisId: '429', name: 'децибел А', symbol: 'дБА' },
 ]
 
 /** Начальный набор пересчётов ТЗ §7.5. */

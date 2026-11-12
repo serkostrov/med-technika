@@ -4,7 +4,7 @@ import { SeedIds } from '@/data/ids'
 
 /**
  * Формы из Приложения Б.
- * status=ready только для трёх форм с материалами П+X (ТЗ App. Б).
+ * status=ready — формы с материалами П+X (ТЗ App. Б) и готовым профилем.
  * Остальные — no_materials (без заполненного протокола и/или XML).
  *
  * Листы 26-ЭД («Дети_» и др.) и спорные приложения с [УТОЧНИТЬ]
@@ -106,7 +106,20 @@ export const SEED_PROTOCOL_FORMS: readonly ProtocolForm[] = [
     'БВЕК.431440.08.04 РЭ',
     'ФР.1.34.2021.39109',
   ]),
-  ...formBatch(13, 'шаблон-26-Ш', 'noise', ['ГОСТ 9612']),
+  {
+    id: SeedIds.formNoise,
+    kindId: 13,
+    templateFile: 'шаблон-26-Ш',
+    sheetName: 'ГОСТ 9612',
+    title: 'ГОСТ 9612',
+    parserProfile: 'noise',
+    status: FormStatus.ready,
+    // рабочие места; Directory пустой — как в эталоне 29-26-Ш
+    typeObjectId: 10,
+    fgisDirectory: '',
+    conditionsLimits: null,
+    settings: { numberSuffix: 'Ш' },
+  },
 ]
 
 function formBatch(

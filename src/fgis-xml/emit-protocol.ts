@@ -140,6 +140,7 @@ function emitResearch(result: ProtocolResult, ctx: ProtocolXmlContext): string {
   const info = [
     el('IndicatorId', indicatorId),
     el('UniqueIndicator', uniqueIndicator),
+    // справочник — настройка формы (у 26-Ш и др. рабочих мест он пустой)
     el('Directory', ctx.form.fgisDirectory),
     el('FactValue', result.factValue),
     el('MeasurementId', unit?.fgisId ?? ''),
@@ -207,10 +208,12 @@ export function emitProtocolXml(ctx: ProtocolXmlContext): string {
 
   // ObjectInfo — контейнер объекта и результатов (актуальная XSD ФГИС:
   // ModelGetDate / FullNameObject / ResearchObject не являются детьми protocol).
-  const objectParts: string[] = [
-    el('TypeObjectId', ctx.form.typeObjectId ?? 1),
-  ]
-  const modelGet = p.modelGetDate ?? p.measureStart
+  const typeObjectId = ctx.form.typeObjectId ?? 1
+  const objectParts: string[] = [el('TypeObjectId', typeObjectId)]
+  // «Дата получения образца» — только для продукции (TypeObjectId=1);
+  // у рабочих мест / помещений / вентиляции в эталонах её нет
+  const modelGet =
+    typeObjectId === 1 ? (p.modelGetDate ?? p.measureStart) : null
   if (modelGet) {
     objectParts.push(el('ModelGetDate', modelGet))
   }

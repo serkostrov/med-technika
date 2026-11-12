@@ -115,10 +115,11 @@ describe('Domain integrity & seed', () => {
     expect(RPC_COVERAGE.length).toBe(Object.keys(RpcOperation).length)
   })
 
-  it('ready-формы — только три эталонных из ТЗ', () => {
+  it('ready-формы — только те, для которых есть материалы П+X и профиль', () => {
     const seed = createSeedBundle()
     const ready = seed.protocolForms.filter((f) => f.status === 'ready')
     expect(ready.map((f) => f.sheetName).sort()).toEqual([
+      'ГОСТ 9612',
       'Дефибриллятор ИЭВИ',
       'НЧ-терапия',
       'УВЧ-терапия',

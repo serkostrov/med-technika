@@ -1,4 +1,5 @@
 import type { Database } from '@/server/db/database'
+import { syncSeedReferenceData } from '@/data/seed/sync'
 
 export type DatabaseSnapshot = {
   version: 1
@@ -160,6 +161,8 @@ export function importDatabaseSnapshot(
   db.auditLog = structuredClone(t.auditLog as Database['auditLog'])
   db.settings = structuredClone(t.settings as Database['settings'])
   db.auditSeq = Number(t.auditSeq ?? 1)
+  // новые готовые формы/ОА из кода → в старую БД (без перезаписи ручных правок)
+  syncSeedReferenceData(db)
 
   db.protocolSources.clear()
   for (const s of snap.blobs.protocolSources) {

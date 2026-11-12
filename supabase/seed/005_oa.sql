@@ -114,6 +114,26 @@ INSERT INTO oa_items (
     FALSE,
     NULL,
     NULL
+  ),
+  (
+    '22222222-2222-4222-8222-222222222216',
+    '22222222-2222-4222-8222-222222222201',
+    '—',
+    'ГОСТ ISO 9612-2016',
+    29564,
+    NULL,
+    496,
+    'Рабочие места',
+    'Эквивалентный уровень звука',
+    NULL,
+    'дБА',
+    '429',
+    NULL,
+    NULL,
+    NULL,
+    FALSE,
+    NULL,
+    NULL
   )
 ON CONFLICT (id) DO UPDATE SET
   edition_id = EXCLUDED.edition_id,

@@ -1,12 +1,19 @@
 /**
  * Канонизация XML для сравнения с эталоном (ТЗ §10.2 / §18):
- * — удалить Content;
+ * — удалить Content и комментарии;
+ * — пустые необязательные DocNameId / UniqueMethod / … считать отсутствующими
+ *   (выгрузки клиента пишут только один из DocNameId / UniqueMethod);
  * — отсортировать EquipmentDetails по EquipmentId;
  * — нормализовать пробелы между тегами.
  */
 export function canonicalizeFgisXml(xml: string): string {
   let out = xml.replace(/\r\n/g, '\n')
+  out = out.replace(/<!--[\s\S]*?-->/g, '')
   out = out.replace(/<Content>[\s\S]*?<\/Content>/g, '<Content></Content>')
+  out = out.replace(
+    /<(DocNameId|UniqueMethod|UniqueMeasurement|UniqueMethodik)>\s*<\/\1>/g,
+    '',
+  )
 
   out = out.replace(
     /<Equipment>([\s\S]*?)<\/Equipment>/g,

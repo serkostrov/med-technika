@@ -583,11 +583,11 @@ INSERT INTO protocol_forms (
     'ГОСТ 9612',
     'ГОСТ 9612',
     'noise',
-    'no_materials',
+    'ready',
+    10,
+    '',
     NULL,
-    'DM-55254',
-    NULL,
-    '{}'::jsonb
+    '{"numberSuffix":"Ш"}'::jsonb
   )
 ON CONFLICT (id) DO UPDATE SET
   kind_id = EXCLUDED.kind_id,
