@@ -28,6 +28,11 @@ import {
 import { AuthService, type PublicAccount } from '@/server/auth/auth-service'
 import type { Database } from '@/server/db/database'
 import {
+  exportDatabaseSnapshot,
+  importDatabaseSnapshot,
+  type DatabaseSnapshot,
+} from '@/server/db/backup'
+import {
   DictionaryService,
   type ExcelRow,
   type FsaCatalog,
@@ -1095,6 +1100,40 @@ export class SecureApi {
   /** Только для тестовых фикстур. */
   addIssueForTests(issue: ProtocolIssue): void {
     this.db.protocolIssues.push(issue)
+  }
+
+  /** Полная резервная копия (таблицы + файлы). Только начальник ИЛ. */
+  exportSnapshot(ctx: AuthContext): DatabaseSnapshot {
+    if (!isHead(ctx)) forbidden('Резервная копия доступна только начальнику ИЛ')
+    return exportDatabaseSnapshot(this.db)
+  }
+
+  /**
+   * Восстановление из резервной копии. Только начальник ИЛ.
+   * Текущие сессии сохраняются, если их учётная запись есть в копии —
+   * иначе восстановление выкинуло бы того, кто его запустил.
+   */
+  importSnapshot(ctx: AuthContext, snap: DatabaseSnapshot): { ok: true } {
+    if (!isHead(ctx)) forbidden('Восстановление доступно только начальнику ИЛ')
+    if (!snap || snap.version !== 1 || !snap.tables || !snap.blobs) {
+      throw new DomainError('Неверный формат файла резервной копии', 'VALIDATION')
+    }
+    const prevSessions = this.db.sessions
+    importDatabaseSnapshot(this.db, snap)
+    const known = new Set(this.db.sessions.map((s) => s.token))
+    const accounts = new Set(
+      this.db.authAccounts.filter((a) => a.isActive).map((a) => a.id),
+    )
+    for (const s of prevSessions) {
+      if (!known.has(s.token) && accounts.has(s.authUserId)) {
+        this.db.sessions.push(s)
+      }
+    }
+    this.db.pendingUploads.clear()
+    this.writeAudit(ctx.staffId, 'database', null, 'restore_snapshot', {
+      exportedAt: snap.exportedAt ?? null,
+    })
+    return { ok: true }
   }
 
   /** Только для тестовых фикстур (stub-протоколы без полного разбора). */

@@ -44,37 +44,42 @@ function b64ToAb(b64: string): ArrayBuffer {
   return out.buffer
 }
 
+/** Таблицы без файлов (для бэкапа и серверного сохранения). */
+export function exportDatabaseTables(db: Database): Record<string, unknown> {
+  return {
+    authAccounts: db.authAccounts,
+    sessions: db.sessions,
+    staff: db.staff,
+    customers: db.customers,
+    oaEditions: db.oaEditions,
+    oaItems: db.oaItems,
+    units: db.units,
+    unitConversions: db.unitConversions,
+    equipment: db.equipment,
+    equipmentVerifications: db.equipmentVerifications,
+    measurementKinds: db.measurementKinds,
+    protocolForms: db.protocolForms,
+    formIndicatorMaps: db.formIndicatorMaps,
+    protocols: db.protocols,
+    protocolObjects: db.protocolObjects,
+    protocolResults: db.protocolResults,
+    protocolEquipment: db.protocolEquipment,
+    protocolIssues: db.protocolIssues,
+    fgisExports: db.fgisExports,
+    fgisExportItems: db.fgisExportItems,
+    fsaEntries: db.fsaEntries,
+    auditLog: db.auditLog,
+    settings: db.settings,
+    auditSeq: db.auditSeq,
+  }
+}
+
 /** Сериализация in-memory БД для резервной копии (ТЗ §16). */
 export function exportDatabaseSnapshot(db: Database): DatabaseSnapshot {
   return {
     version: 1,
     exportedAt: new Date().toISOString(),
-    tables: {
-      authAccounts: db.authAccounts,
-      sessions: db.sessions,
-      staff: db.staff,
-      customers: db.customers,
-      oaEditions: db.oaEditions,
-      oaItems: db.oaItems,
-      units: db.units,
-      unitConversions: db.unitConversions,
-      equipment: db.equipment,
-      equipmentVerifications: db.equipmentVerifications,
-      measurementKinds: db.measurementKinds,
-      protocolForms: db.protocolForms,
-      formIndicatorMaps: db.formIndicatorMaps,
-      protocols: db.protocols,
-      protocolObjects: db.protocolObjects,
-      protocolResults: db.protocolResults,
-      protocolEquipment: db.protocolEquipment,
-      protocolIssues: db.protocolIssues,
-      fgisExports: db.fgisExports,
-      fgisExportItems: db.fgisExportItems,
-      fsaEntries: db.fsaEntries,
-      auditLog: db.auditLog,
-      settings: db.settings,
-      auditSeq: db.auditSeq,
-    },
+    tables: exportDatabaseTables(db),
     blobs: {
       protocolSources: [...db.protocolSources.values()].map((s) => ({
         path: s.path,

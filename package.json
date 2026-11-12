@@ -6,6 +6,9 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
+    "build:server": "vite build --ssr src/server/node/main.ts --outDir dist-server --emptyOutDir",
+    "start": "node dist-server/main.js",
+    "server:dev": "vite build --ssr src/server/node/main.ts --outDir dist-server --emptyOutDir && node dist-server/main.js",
     "lint": "eslint .",
     "preview": "vite preview",
     "test": "vitest run",
@@ -15,20 +18,23 @@
     "seed:sql": "vitest run src/data/seed/generate-sql.test.ts",
     "docker:up": "docker compose -f docker/compose.yml up --build -d",
     "docker:down": "docker compose -f docker/compose.yml down",
-    "docker:db": "docker compose -f docker/compose.yml --profile db up -d db"
+    "docker:db": "docker compose -f docker/compose.yml up -d db"
   },
   "dependencies": {
     "decimal.js": "^10.6.0",
     "lucide-react": "^1.54.0",
+    "pg": "^8.23.1",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
     "react-router-dom": "^7.18.4",
     "xlsx": "^0.18.5"
   },
   "devDependencies": {
+    "@electric-sql/pglite": "^0.5.16",
     "@eslint/js": "^10.0.1",
     "@types/decimal.js": "^0.0.32",
     "@types/node": "^24.13.3",
+    "@types/pg": "^8.23.1",
     "@types/react": "^19.2.18",
     "@types/react-dom": "^19.2.7",
     "@types/xlsx": "^0.0.35",

@@ -1,108 +1,104 @@
 # Деплой на сервер
 
-## Архитектура (честно)
+## Архитектура
 
-| Слой | Сейчас | Цель |
-|------|--------|------|
-| UI | React SPA (`dist/`) | без изменений |
-| Бизнес-логика | portable `SecureApi` в браузере (in-memory) | тот же код на Node/Edge + Postgres |
-| Справочники / seed | TypeScript → **SQL** (`npm run seed:sql`) | Postgres |
-| Персист браузера | `localStorage` (`mt.db.v1`), logout **не** стирает | Postgres API |
-| Файлы | in-memory Maps | Supabase Storage / S3 buckets |
+| Слой | Как устроено |
+|------|--------------|
+| UI | React SPA (`dist/`), раздаётся тем же Node-сервисом |
+| API | Node-сервис `src/server/node/` → `SecureApi` (вся бизнес-логика, права, проверки), маршруты `/api/*` |
+| Данные | Postgres из Supabase, схема `medtech` (`supabase/migrations/003_app_state.sql`) |
+| Файлы | Excel-исходники, PDF-сканы, XML-выгрузки — таблица `medtech.app_blobs` (bytea) |
+| Вход | учётки приложения (`authAccounts` в базе), пароли — PBKDF2, сессии 12 ч хранятся в базе |
 
-Полный перенос RPC на Postgres — отдельный этап. Этот документ закрывает **миграции, seed, env и выкладку SPA**.
+Как хранятся данные:
+- **Загрузка.** При старте сервис читает состояние из Postgres в память.
+- **Запись.** После каждого изменяющего запроса сервис пишет изменения в одной транзакции:
+  - таблицы — jsonb в `medtech.app_state`;
+  - файлы — только новые и удалённые, в `medtech.app_blobs`.
+- **Доступ.** Схема `medtech` не публикуется через PostgREST Supabase, поэтому ключи anon и authenticated её не видят. Данные доступны только сервису по `DATABASE_URL`.
+- **Сбой записи.** Если база недоступна, запрос получает ответ 503 «Изменение не сохранено». Следующее сохранение повторит запись.
 
-## Env
+Сервис рассчитан на **один экземпляр** (одна реплика): состояние держится в памяти процесса.
 
-```bash
-cp .env.example .env
-```
+## Переменные окружения (Dokploy → Environment)
 
-| Переменная | Назначение |
-|------------|------------|
-| `VITE_APP_ENV` | `local` / `staging` / `production` |
-| `VITE_PERSIST_LOCAL_DB` | `true` для portable SPA (данные переживают logout); `false` только с Postgres API |
-| `VITE_SUPABASE_*` | опционально, если подключите Supabase |
+| Переменная | Обязательно | Назначение |
+|------------|-------------|------------|
+| `DATABASE_URL` | да | `postgres://postgres:<POSTGRES_PASSWORD>@<хост-БД>:5432/postgres` |
+| `DATABASE_SSL` | нет | `true`, если Postgres снаружи и требует TLS |
+| `INITIAL_ADMIN_EMAIL`, `INITIAL_ADMIN_PASSWORD` | на первом запуске | первая учётка начальника ИЛ. Используется **только на пустой базе**, потом игнорируется |
+| `PORT` | нет | по умолчанию 80 |
+| `MAX_BODY_MB` | нет | лимит запроса, по умолчанию 300 (восстановление бэкапа) |
 
-Секреты (`SUPABASE_SERVICE_ROLE_KEY`) **не** коммитить.
+Build-аргумент `VITE_API_BASE` по умолчанию равен `/api`. Если задать его пустым, соберётся старый портативный SPA, который хранит данные в браузере.
 
-## Подготовка БД (опционально)
+Секреты (`DATABASE_URL`, пароли) **не коммитить**. Задавайте их только в Dokploy.
 
-```bash
-npm run seed:sql
-npm run docker:db          # локальный Postgres + migrations + seed
-# или: supabase db reset
-```
-
-Файлы `*.dev.sql` содержат тестовые учётки — **не** накатывать на боевой прод без смены паролей.
-
-## Сборка SPA для сервера
-
-```bash
-export VITE_APP_ENV=production
-export VITE_PERSIST_LOCAL_DB=true
-npm ci
-npm run build
-# раздавайте dist/ через Nginx/Caddy (SPA fallback → index.html)
-```
-
-Docker-образ по умолчанию передаёт `VITE_PERSIST_LOCAL_DB=true`:
-
-```bash
-npm run docker:up
-# http://localhost:8080
-```
-
-HTTPS — на reverse proxy перед контейнером.
+Демо-учётки (`head@il.local` / `engineer@il.local`) на сервер **не создаются**. Если база пустая и `INITIAL_ADMIN_*` не задан, сервис не стартует.
 
 ## Dokploy
 
-1. **Application** → Git-репозиторий проекта.  
-2. **Build Type** = `Dockerfile`.  
-3. **Dockerfile path** = `Dockerfile` (корень репо).  
-4. **Docker context** = `.`  
-5. **Port** = `80` (при создании домена тоже 80).  
-6. **Build Arguments** (не runtime env — Vite вшивает на сборке):
+1. **Application** → Git-репозиторий, Build Type = `Dockerfile`, path = `Dockerfile`, context = `.`
+2. **Port** = `80`, домен — как раньше.
+3. **Environment** — `DATABASE_URL`, `INITIAL_ADMIN_EMAIL`, `INITIAL_ADMIN_PASSWORD`.
+4. Deploy. Healthcheck: `GET /healthz` → `ok`.
+5. В логах должно быть `База пустая — создан начальник ИЛ …` или `Состояние загружено: …`.
 
-```text
-VITE_APP_ENV=production
-VITE_PERSIST_LOCAL_DB=true
-VITE_SUPABASE_URL=
-VITE_SUPABASE_ANON_KEY=
+### Где взять `DATABASE_URL` для Supabase в Dokploy
+
+1. Пароль Postgres лежит в Dokploy → Supabase-стек (compose) → Environment → `POSTGRES_PASSWORD`.
+2. Хост: сервис должен видеть контейнер базы по сети Docker. Посмотреть на сервере:
+
+```bash
+docker ps --format '{{.Names}}' | grep -i -E 'supabase.*db|db.*supabase'
+docker inspect <имя-контейнера-db> --format '{{json .NetworkSettings.Networks}}'
 ```
 
-7. Deploy. Healthcheck: `GET /healthz` → `ok`.
+Дальше два случая:
+- **db и приложение в общей сети** (обычно `dokploy-network`): хост — имя контейнера или его alias в этой сети.
+- **Сети разные:** в настройках Supabase-compose добавьте сервису `db` сеть `dokploy-network` (external), затем передеплойте Supabase-стек.
 
-Файлы: корневой `Dockerfile`, nginx — `docker/nginx.dokploy.conf`, игнор контекста — `.dockerignore`.
+3. Пользователь — `postgres`, база — `postgres`, порт — `5432`. Подключение идёт напрямую к базе, без пулера Supavisor.
 
-## Хранение данных в браузере (portable SPA)
+## Переезд с portable-версии (данные из браузера)
 
-| Ключ | Где | Что |
-|------|-----|-----|
-| `mt.db.v1` (+ `.bak`) | **IndexedDB** `mt-persist` (fallback: localStorage) | снимок in-memory БД (справочники, протоколы). Logout **не** удаляет |
-| `mt.access_token` | sessionStorage | токен сессии входа |
-| `mt.session` | sessionStorage | email/role/staffId для UI |
+Сейчас справочники и протоколы лежат в IndexedDB браузера того компьютера, где работали.
 
-- Logout чистит **только** sessionStorage (вход). In-memory БД и снимок остаются.
-- Ошибки записи снимка показываются toast («Не удалось сохранить данные локально»).
-- UI: **Настройки → Основные → Резервная копия** (скачать / восстановить JSON).
-- Legacy-снимки из localStorage/sessionStorage мигрируют в IndexedDB при первом чтении.
+1. **До деплоя**, в старой версии: войдите под начальником ИЛ → **Настройки → Основные → Скачать резервную копию**. Получится файл `mt-backup-YYYY-MM-DD.json`.
+2. Задеплойте новую версию с переменными выше.
+3. Войдите под `INITIAL_ADMIN_EMAIL`.
+4. **Настройки → Основные → Восстановить из файла** → выберите JSON. Данные, учётки и файлы переедут в Postgres.
+5. После восстановления действуют учётки и пароли из бэкапа. Если там были демо-пароли, **смените их**: Настройки → Пользователи.
 
-`VITE_PERSIST_LOCAL_DB=false` — не писать снимок (только когда появится Postgres API).
+Старые данные в IndexedDB браузера никуда не исчезают: новая версия их просто не читает.
+
+## Резервные копии
+
+- **Из интерфейса:** Настройки → Резервная копия (только начальник ИЛ). Это полный JSON-снимок с файлами.
+- **На сервере:** `pg_dump -n medtech`. Схема небольшая, её достаточно для полного восстановления.
+
+```bash
+docker exec <db-container> pg_dump -U postgres -n medtech -Fc postgres > medtech-$(date +%F).dump
+```
+
+## Локальный запуск
+
+```bash
+npm run build:server
+# без Postgres — встроенный PGlite:
+MSYS_NO_PATHCONV=1 VITE_API_BASE=/api npx vite build
+PGLITE_DIR=.data/pglite INITIAL_ADMIN_EMAIL=admin@lab.local INITIAL_ADMIN_PASSWORD=secret PORT=8787 npm start
+# с Docker: npm run docker:up → http://localhost:8080
+```
+
+`MSYS_NO_PATHCONV=1` нужен только в Git Bash на Windows. Без него `/api` превращается в путь `C:/Program Files/Git/api`.
+
+Без `VITE_API_BASE` команда `npm run dev` работает как раньше, в portable-режиме.
 
 ## Checklist перед заливкой
 
-1. [ ] `.env` на сервере без `*.dev` паролей в проде  
-2. [ ] `npm run seed:sql` и миграции накатили на Postgres  
-3. [ ] `VITE_PERSIST_LOCAL_DB=true` в build args (portable SPA)  
-4. [ ] Образ **пересобран** после фикса персистентности (IndexedDB + logout без wipe)  
-5. [ ] `npm test && npm run build` зелёные  
-6. [ ] Backup cron / UI-бэкап по [ops/BACKUP.md](ops/BACKUP.md)  
-7. [ ] Reverse proxy + TLS  
-
-## Следующий этап (Postgres runtime)
-
-1. Node/Edge API, который поднимает `SecureApi` над `pg` вместо `createEmptyDatabase()`.  
-2. Auth через `auth_accounts` / Supabase Auth.  
-3. Файлы в Storage buckets из `config.toml`.  
-4. SPA ходит на HTTP API, а не в in-process handler.
+1. [ ] Скачана резервная копия из старой версии (см. «Переезд»)
+2. [ ] В Dokploy заданы `DATABASE_URL`, `INITIAL_ADMIN_*`
+3. [ ] `npm test && npm run build && npm run build:server` зелёные
+4. [ ] После деплоя: вход, восстановление бэкапа, смена демо-паролей
+5. [ ] Настроен cron на `pg_dump -n medtech`

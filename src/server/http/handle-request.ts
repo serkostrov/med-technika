@@ -38,6 +38,15 @@ export async function handleApiRequest(
       return json(200, { staffId: ctx.staffId, role: ctx.role, email: ctx.email })
     }
 
+    if (method === 'GET' && path === '/admin/snapshot') {
+      return json(200, api.exportSnapshot(ctx))
+    }
+
+    if (method === 'POST' && path === '/admin/snapshot') {
+      const body = await readJson(request)
+      return json(200, api.importSnapshot(ctx, body as never))
+    }
+
     if (method === 'GET' && path === '/protocols') {
       const q = parseProtocolListQuery(url.searchParams)
       return json(200, api.listProtocols(ctx, q))

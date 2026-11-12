@@ -25,3 +25,6 @@ src/**/*.test.ts
 docs
 scripts
 docker/compose.yml
+dist-server
+.data
+.playwright-mcp

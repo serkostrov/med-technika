@@ -29,13 +29,15 @@ Seed-учётки (локальный bootstrap): `head@il.local` / `head-test-p
 - React 19 + TypeScript + Vite
 - Portable domain/API (in-memory Database → Postgres/Supabase)
 - SQL: `supabase/migrations/`, seed из TS: `npm run seed:sql` → `supabase/seed/`
-- Production / Dokploy: корневой `Dockerfile` + nginx (`VITE_PERSIST_LOCAL_DB=true` — снимок в IndexedDB; logout чистит только сессию)
+- Production / Dokploy: корневой `Dockerfile` — Node-сервис (SPA + API `/api`), данные в Postgres Supabase (схема `medtech`). См. [docs/DEPLOY.md](docs/DEPLOY.md)
+- Без `VITE_API_BASE` SPA работает в portable-режиме (данные в IndexedDB браузера)
 
 ## Скрипты
 
 - `npm test` — unit + integration/e2e
 - `npm run build` — production SPA в `dist/`
 - `npm run seed:sql` — сгенерировать SQL seed из TypeScript
-- `npm run docker:up` — nginx на :8080
-- `npm run docker:db` — Postgres + migrations + seed
+- `npm run build:server` — Node-сервис в `dist-server/`; `npm start` — запуск
+- `npm run docker:up` — сервис + Postgres на :8080
+- `npm run docker:db` — только Postgres
 - `npm run backup` / `npm run restore` — шаблон снимка БД

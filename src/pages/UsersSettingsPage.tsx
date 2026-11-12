@@ -3,10 +3,8 @@ import { Navigate } from 'react-router-dom'
 import { useAuth } from '@/client/auth-context'
 import { fetchSettings, writeSetting } from '@/client/api'
 import { apiFetchJson } from '@/client/dictionaries-api'
-import {
-  exportSharedDbSnapshot,
-  importSharedDbSnapshot,
-} from '@/client/shared-api'
+import { downloadDbSnapshot, restoreDbSnapshot } from '@/client/backup-api'
+import { isRemoteApi } from '@/client/transport'
 import type { DatabaseSnapshot } from '@/server/db/backup'
 import { useToast } from '@/shared/ui/toast'
 import { ErrorState, LoadingState } from '@/shared/ui/states'
@@ -218,7 +216,7 @@ export function UsersSettingsPage() {
   async function downloadBackup() {
     setBusy(true)
     try {
-      const snap = await exportSharedDbSnapshot()
+      const snap = await downloadDbSnapshot()
       const blob = new Blob([JSON.stringify(snap, null, 2)], {
         type: 'application/json',
       })
@@ -254,7 +252,7 @@ export function UsersSettingsPage() {
       if (snap.version !== 1 || !snap.tables) {
         throw new Error('Неверный формат файла резервной копии')
       }
-      await importSharedDbSnapshot(snap)
+      await restoreDbSnapshot(snap)
       notify('Данные восстановлены из резервной копии', 'success')
       await reload()
     } catch (err) {
@@ -509,8 +507,9 @@ export function UsersSettingsPage() {
 
           <h2 style={{ marginTop: '1.5rem' }}>Резервная копия</h2>
           <p className="muted small">
-            Снимок справочников и протоколов хранится в браузере (IndexedDB).
-            Скачайте копию на диск — так данные не пропадут при очистке сайта.
+            {isRemoteApi
+              ? 'Данные хранятся на сервере (Postgres). Копия — полный снимок справочников, протоколов и файлов. Восстановление заменяет все данные на сервере для всех пользователей.'
+              : 'Снимок справочников и протоколов хранится в браузере (IndexedDB). Скачайте копию на диск — так данные не пропадут при очистке сайта.'}
           </p>
           <div className="form-actions">
             <button

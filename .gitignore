@@ -40,3 +40,5 @@ supabase/.branches/
 
 # Test / coverage
 coverage/
+dist-server
+.data

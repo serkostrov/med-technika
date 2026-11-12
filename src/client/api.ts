@@ -1,15 +1,7 @@
-import {
-  handleApiRequest,
-  type SecureApi,
-} from '@/server'
-import { flushPersistSharedDb, getSharedApi, persistSharedDb } from '@/client/shared-api'
+import { flushPersistSharedDb } from '@/client/shared-api'
+import { isRemoteApi, sendApiRequest } from '@/client/transport'
 
-const BASE = 'http://il.local'
 const TOKEN_KEY = 'mt.access_token'
-
-async function getApi(): Promise<SecureApi> {
-  return getSharedApi()
-}
 
 export function getStoredToken(): string | null {
   return sessionStorage.getItem(TOKEN_KEY)
@@ -22,28 +14,7 @@ export function clearSession(): void {
 }
 
 async function apiFetch(path: string, init: RequestInit = {}): Promise<Response> {
-  const api = await getApi()
-  const headers = new Headers(init.headers)
-  const token = getStoredToken()
-  if (token) headers.set('authorization', `Bearer ${token}`)
-  if (init.body && !headers.has('content-type')) {
-    headers.set('content-type', 'application/json')
-  }
-  const res = await handleApiRequest(api, new Request(`${BASE}${path}`, { ...init, headers }))
-  if (res.status !== 401) {
-    // Мутации — сразу на диск; чтение — debounce через persistSharedDb в login.
-    const method = (init.method ?? 'GET').toUpperCase()
-    if (method !== 'GET' && method !== 'HEAD') {
-      try {
-        await flushPersistSharedDb()
-      } catch {
-        /* onPersistFailure → toast */
-      }
-    } else {
-      persistSharedDb()
-    }
-  }
-  return res
+  return sendApiRequest(path, init, getStoredToken())
 }
 
 export async function loginRequest(
@@ -71,10 +42,12 @@ export async function loginRequest(
       staffId: body.account.staffId,
     }),
   )
-  try {
-    await flushPersistSharedDb()
-  } catch {
-    /* session tokens уже в sessionStorage */
+  if (!isRemoteApi) {
+    try {
+      await flushPersistSharedDb()
+    } catch {
+      /* session tokens уже в sessionStorage */
+    }
   }
   return {
     token: body.token,

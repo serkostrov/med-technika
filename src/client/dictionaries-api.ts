@@ -1,32 +1,12 @@
 import { clearSession, getStoredToken } from '@/client/api'
-import { flushPersistSharedDb, getSharedApi } from '@/client/shared-api'
-import { handleApiRequest } from '@/server'
-
-const BASE = 'http://il.local'
+import { sendApiRequest } from '@/client/transport'
 
 async function apiFetchRaw(
   path: string,
   init: RequestInit = {},
 ): Promise<Response> {
-  const api = await getSharedApi()
-  const headers = new Headers(init.headers)
-  const token = getStoredToken()
-  if (token) headers.set('authorization', `Bearer ${token}`)
-  if (init.body && !headers.has('content-type')) {
-    headers.set('content-type', 'application/json')
-  }
-  const res = await handleApiRequest(
-    api,
-    new Request(`${BASE}${path}`, { ...init, headers }),
-  )
+  const res = await sendApiRequest(path, init, getStoredToken())
   if (res.status === 401) clearSession()
-  if (res.ok) {
-    try {
-      await flushPersistSharedDb()
-    } catch {
-      /* onPersistFailure → toast; мутация в памяти уже применена */
-    }
-  }
   return res
 }
 

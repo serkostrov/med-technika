@@ -2,7 +2,8 @@ import { useState, type FormEvent } from 'react'
 import { Navigate, useNavigate } from 'react-router-dom'
 import { useToast } from '@/shared/ui/toast'
 import { useAuth } from '@/client/auth-context'
-import { SeedCredentials } from '@/server'
+import { SeedCredentials } from '@/server/bootstrap'
+import { isRemoteApi } from '@/client/transport'
 
 export function LoginPage() {
   const navigate = useNavigate()
@@ -64,8 +65,12 @@ export function LoginPage() {
         </button>
         <p className="muted small" style={{ marginBottom: 0 }}>
           Учётные записи создаёт начальник ИЛ.
-          <br />
-          Демо: {SeedCredentials.head.email} / {SeedCredentials.engineer.email}
+          {isRemoteApi ? null : (
+            <>
+              <br />
+              Демо: {SeedCredentials.head.email} / {SeedCredentials.engineer.email}
+            </>
+          )}
         </p>
       </form>
     </div>

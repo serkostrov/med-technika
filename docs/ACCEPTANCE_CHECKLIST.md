@@ -82,7 +82,8 @@
 | Пункт | Статус |
 |---|---|
 | Production build (`npm run build`) | реализовано |
-| Docker + nginx | реализовано (`docker/`) |
+| Docker: Node-сервис (SPA + API) | реализовано (`Dockerfile`, `src/server/node/`) |
+| Хранение на сервере в Postgres Supabase | реализовано (схема `medtech`, `003_app_state.sql`) |
 | SQL миграции / seed | реализовано (`supabase/`) |
 | Backup/restore in-memory snapshot | реализовано |
 | pg_dump + Storage 14 дней | частично (документировано в `docs/ops/BACKUP.md`; нужен Postgres-стенд) |
