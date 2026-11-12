@@ -10,6 +10,9 @@ export const SEED_UNITS: readonly Unit[] = [
   { fgisId: '96', name: 'секунда', symbol: 'с' },
   // 26-Ш: MeasurementId 429 из эталонной выгрузки 29-26-Ш
   { fgisId: '429', name: 'децибел А', symbol: 'дБА' },
+  // 26-ПЧ: MeasurementId из эталона 52-26-ПЧ
+  { fgisId: '993', name: 'нанотесла', symbol: 'нТл' },
+  { fgisId: '555', name: 'вольт на метр', symbol: 'В/м' },
 ]
 
 /** Начальный набор пересчётов ТЗ §7.5. */

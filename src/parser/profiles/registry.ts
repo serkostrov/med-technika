@@ -3,6 +3,7 @@ import { FormStatus } from '@/domain'
 import { parsePhysioBb } from './physio-bb'
 import { parsePhysioDf } from './physio-df'
 import { parseNoise } from './noise'
+import { parseEmf } from './emf'
 import type { SheetGrid } from '../sheet-utils'
 import type { ParsedObject, ParsedResult } from '../types'
 import { PROFILE_VERSIONS, type KnownParserProfile } from '../version'
@@ -21,6 +22,7 @@ const PROFILES: Record<KnownParserProfile, ProfileRunner> = {
   'physio-bb': parsePhysioBb,
   'physio-df': parsePhysioDf,
   noise: (grid) => parseNoise(grid),
+  emf: (grid) => parseEmf(grid),
 }
 
 export function isImplementedProfile(

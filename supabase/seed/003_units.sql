@@ -7,7 +7,9 @@ INSERT INTO units (fgis_id, name, symbol) VALUES
   ('716', 'миллиампер', 'мА'),
   ('58', 'джоуль', 'Дж'),
   ('96', 'секунда', 'с'),
-  ('429', 'децибел А', 'дБА')
+  ('429', 'децибел А', 'дБА'),
+  ('993', 'нанотесла', 'нТл'),
+  ('555', 'вольт на метр', 'В/м')
 ON CONFLICT (fgis_id) DO UPDATE SET name = EXCLUDED.name, symbol = EXCLUDED.symbol;
 
 INSERT INTO unit_conversions (from_symbol, to_symbol, factor) VALUES

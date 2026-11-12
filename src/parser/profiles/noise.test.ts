@@ -1,22 +1,14 @@
-import { readFileSync } from 'node:fs'
-import { dirname, join } from 'node:path'
-import { fileURLToPath } from 'node:url'
 import { describe, expect, it } from 'vitest'
-import { AppRole, CustomerKindId, EquipmentKind } from '@/domain'
 import { createSeedBundle } from '@/data/seed'
-import { normalizeSerial } from '@/dictionaries/normalize/text'
-import { canonicalizeFgisXml } from '@/fgis-xml'
 import { parseProtocol } from '@/parser'
-import { bootstrapServer, SeedCredentials } from '@/server'
-
-const HERE = dirname(fileURLToPath(import.meta.url))
-const XLSX_PATH = join(HERE, '../fixtures/real/29-26-Ш.xlsx')
-const XML_PATH = join(HERE, '../../fgis-xml/fixtures/real/29-26-Ш.xml')
-
-function readAb(path: string): ArrayBuffer {
-  const buf = readFileSync(path)
-  return buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength) as ArrayBuffer
-}
+import {
+  KORSHUNOV,
+  RADUGA_MED,
+  buildRealProtocolXml,
+  normalizeForCompare,
+  realReferenceXml,
+  realXlsx,
+} from '@/parser/fixtures/real-reference.test-utils'
 
 // места 4–5 в Excel есть, но строки скрыты → в протокол и ФГИС не идут
 const FACTS = ['50,0', '51,2', '44,8', '46,0', '46,0', '47,2']
@@ -25,7 +17,7 @@ describe('26-Ш шум (ГОСТ ISO 9612) — боевой 29-26-Ш', () => {
   it('разбор: 3 видимых рабочих места × (LEX,8h + фактическая смена), шапка, 5 СИ', () => {
     const seed = createSeedBundle()
     const parsed = parseProtocol({
-      data: readAb(XLSX_PATH),
+      data: realXlsx('29-26-Ш'),
       forms: seed.protocolForms,
       indicatorMaps: seed.formIndicatorMaps,
     })
@@ -57,91 +49,20 @@ describe('26-Ш шум (ГОСТ ISO 9612) — боевой 29-26-Ш', () => {
   })
 
   it('XML совпадает с эталонной выгрузкой клиента', async () => {
-    const { api } = await bootstrapServer()
-    const db = api.getDbForTests()
-
-    // справочники клиента, которых нет в seed
-    db.customers.push({
-      id: crypto.randomUUID(),
-      name: 'ООО "Радуга-Мед"',
-      nameAliases: [],
-      kindId: CustomerKindId.legalEntity,
-      inn: '4345096710',
-      ogrn: '1054316522677',
-      phone: null,
-      email: null,
-      legalAddress:
-        '610010, Кировская область, город Киров, пр-кт Строителей (Радужный Мкр.), д.11а',
-      actualAddress: null,
-      createdAt: new Date().toISOString(),
-      deletedAt: null,
+    const built = await buildRealProtocolXml({
+      name: '29-26-Ш',
+      applicationDate: '2026-08-31',
+      customer: RADUGA_MED,
+      engineer: KORSHUNOV,
+      equipment: {
+        '145013': 566956,
+        '118316': 566934,
+        '431019': 1142241,
+        '26-14-00176': 3897355,
+        '3069': null,
+      },
     })
-    db.staff.push({
-      id: crypto.randomUUID(),
-      authUserId: null,
-      fullName: 'Коршунов Евгений Владимирович',
-      shortName: 'Коршунов Е.В.',
-      surname: 'Коршунов',
-      fgisIdFullName: 175412,
-      postName: 'Испытатель',
-      fgisRoleIds: [1],
-      appRole: AppRole.engineer,
-      isActive: true,
-      deletedAt: null,
-    })
-    const fgisBySerial: Record<string, number | null> = {
-      '145013': 566956,
-      '118316': 566934,
-      '431019': 1142241,
-      '26-14-00176': 3897355,
-      '3069': null,
-    }
-    for (const [serial, fgisId] of Object.entries(fgisBySerial)) {
-      const id = crypto.randomUUID()
-      db.equipment.push({
-        id,
-        name: `СИ ${serial}`,
-        serialNo: serial,
-        serialNorm: normalizeSerial(serial),
-        invNo: null,
-        fgisEquipmentId: fgisId,
-        kind: EquipmentKind.si,
-        isActive: true,
-        deletedAt: null,
-      })
-      db.equipmentVerifications.push({
-        id: crypto.randomUUID(),
-        equipmentId: id,
-        certNo: `C-${serial}`,
-        verifiedOn: '2026-01-01',
-        validUntil: '2027-12-31',
-        createdAt: new Date().toISOString(),
-        deletedAt: null,
-      })
-    }
-
-    const login = await api.login(SeedCredentials.head.email, SeedCredentials.head.password)
-    const head = api.auth.resolveToken(login.token)
-    const up = await api.uploads.parseUpload(head, '29-26-Ш.xlsx', readAb(XLSX_PATH))
-    expect(up.error).toBeNull()
-    const saved = api.uploads.saveParsed(head, {
-      sourcePath: up.sourcePath,
-      sha256: up.sha256,
-      parsed: up.parsed!,
-    })
-    api.updateProtocol(head, saved.id, { applicationDate: '2026-08-31' })
-
-    const detail = api.getProtocolDetail(head, saved.id)
-    expect(detail.results.filter((r) => r.oaItemId)).toHaveLength(6)
-    const actual = detail.xmlPreview
-    const expected = readFileSync(XML_PATH, 'utf8')
-
-    // хвостовой пробел FullNameObject в эталоне — из ячейки Excel
-    const norm = (xml: string) =>
-      canonicalizeFgisXml(xml).replace(
-        /<FullNameObject>(.*?)<\/FullNameObject>/,
-        (_m, t: string) => `<FullNameObject>${t.trim()}</FullNameObject>`,
-      )
-    expect(norm(actual)).toBe(norm(expected))
+    expect(built.resultsWithOa).toBe(6)
+    expect(normalizeForCompare(built.xml)).toBe(normalizeForCompare(realReferenceXml('29-26-Ш')))
   })
 })

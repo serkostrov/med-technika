@@ -102,10 +102,21 @@ export const SEED_PROTOCOL_FORMS: readonly ProtocolForm[] = [
   ]),
   ...formBatch(10, 'шаблон-26-О', 'light', ['ГОСТ 24940-2016']),
   ...formBatch(11, 'шаблон-26-ПП', 'emf', ['МУК 4.3.2491-09']),
-  ...formBatch(12, 'шаблон-26-ПЧ', 'emf', [
-    'БВЕК.431440.08.04 РЭ',
-    'ФР.1.34.2021.39109',
-  ]),
+  ...formBatch(12, 'шаблон-26-ПЧ', 'emf', ['БВЕК.431440.08.04 РЭ']),
+  {
+    id: SeedIds.formEmfPch,
+    kindId: 12,
+    templateFile: 'шаблон-26-ПЧ',
+    sheetName: 'ФР.1.34.2021.39109',
+    title: 'ФР.1.34.2021.39109',
+    parserProfile: 'emf',
+    status: FormStatus.ready,
+    // рабочие места; Directory пустой — как в эталоне 52-26-ПЧ
+    typeObjectId: 10,
+    fgisDirectory: '',
+    conditionsLimits: null,
+    settings: { numberSuffix: 'ПЧ' },
+  },
   {
     id: SeedIds.formNoise,
     kindId: 13,

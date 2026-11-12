@@ -4,6 +4,7 @@ import {
   COL,
   HEADER_MAX_COL,
   cellNumber,
+  isRowHidden,
   cellText,
   extractPhoneDigits,
   findAnchorRows,
@@ -44,6 +45,8 @@ function collectListUntilNextAnchor(
   const lines: string[] = []
   let buf = ''
   for (let r = startRow + 1; r <= grid.maxRow; r++) {
+    // скрытые строки (СИ, не применявшиеся в этом протоколе) не печатаются
+    if (isRowHidden(grid, r)) continue
     const full = rowListText(grid, r)
     if (!full) continue
     const startsItem = /^\d+[).]/.test(full)
