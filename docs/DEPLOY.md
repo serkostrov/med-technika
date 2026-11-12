@@ -27,6 +27,7 @@
 | `DATABASE_URL` | да | `postgres://postgres:<POSTGRES_PASSWORD>@<хост-БД>:5432/postgres` |
 | `DATABASE_SSL` | нет | `true`, если Postgres снаружи и требует TLS |
 | `INITIAL_ADMIN_EMAIL`, `INITIAL_ADMIN_PASSWORD` | на первом запуске | первая учётка начальника ИЛ. Используется **только на пустой базе**, потом игнорируется |
+| `ALLOW_DEMO_ACCOUNTS` | нет | `true` — на пустой базе создать демо-учётки вместо `INITIAL_ADMIN_*` (только тестовый стенд) |
 | `PORT` | нет | по умолчанию 80 |
 | `MAX_BODY_MB` | нет | лимит запроса, по умолчанию 300 (восстановление бэкапа) |
 
