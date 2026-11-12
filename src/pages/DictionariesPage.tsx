@@ -23,7 +23,12 @@ import {
 } from '@/pages/dictionaries/shared-ui'
 import { Select } from '@/shared/ui/Select'
 import { DatePicker } from '@/shared/ui/DatePicker'
-import { MetaSep } from '@/shared/ui/icons'
+import {
+  IconButton,
+  IconChevronLeft,
+  IconChevronRight,
+  MetaSep,
+} from '@/shared/ui/icons'
 import { formatCalendarDate } from '@/shared/time/moscow'
 
 type TabId =
@@ -790,6 +795,19 @@ function EquipmentPanel({
     )
   }, [snapshot.equipment, equipQuery])
 
+  const [equipPageSize, setEquipPageSize] = useState(20)
+  const [equipPage, setEquipPage] = useState(1)
+  const equipTotalPages = Math.max(
+    1,
+    Math.ceil(filteredEquipment.length / equipPageSize),
+  )
+  // после поиска/удаления текущая страница может исчезнуть
+  const equipPageSafe = Math.min(equipPage, equipTotalPages)
+  const pagedEquipment = filteredEquipment.slice(
+    (equipPageSafe - 1) * equipPageSize,
+    equipPageSafe * equipPageSize,
+  )
+
   async function onExcel(file: File) {
     setBusy(true)
     try {
@@ -1000,7 +1018,10 @@ function EquipmentPanel({
               type="search"
               value={equipQuery}
               placeholder="Наименование, зав. № или код СИ"
-              onChange={(e) => setEquipQuery(e.target.value)}
+              onChange={(e) => {
+                setEquipQuery(e.target.value)
+                setEquipPage(1)
+              }}
             />
           </label>
           {filteredEquipment.length === 0 ? (
@@ -1018,7 +1039,7 @@ function EquipmentPanel({
                 </tr>
               </thead>
               <tbody>
-                {filteredEquipment.map((e) => (
+                {pagedEquipment.map((e) => (
                   <tr key={e.id}>
                     <td className="cell-start">{e.name}</td>
                     <td>{equipmentKindLabel(e.kind)}</td>
@@ -1035,6 +1056,42 @@ function EquipmentPanel({
             </table>
           </div>
           )}
+          {filteredEquipment.length > 0 ? (
+            <div className="pager">
+              <IconButton
+                label="Назад"
+                disabled={equipPageSafe <= 1}
+                onClick={() => setEquipPage(Math.max(1, equipPageSafe - 1))}
+              >
+                <IconChevronLeft />
+              </IconButton>
+              <span className="muted page__meta">
+                Стр. {equipPageSafe} из {equipTotalPages}
+              </span>
+              <IconButton
+                label="Вперёд"
+                disabled={equipPageSafe >= equipTotalPages}
+                onClick={() =>
+                  setEquipPage(Math.min(equipTotalPages, equipPageSafe + 1))
+                }
+              >
+                <IconChevronRight />
+              </IconButton>
+              <Select
+                className="pager__size"
+                aria-label="Позиций на странице"
+                value={String(equipPageSize)}
+                onChange={(v) => {
+                  setEquipPageSize(Number(v))
+                  setEquipPage(1)
+                }}
+                options={[20, 50, 100].map((n) => ({
+                  value: String(n),
+                  label: `по ${n}`,
+                }))}
+              />
+            </div>
+          ) : null}
           </>
         )}
         {preview && (
