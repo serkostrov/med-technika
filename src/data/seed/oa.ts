@@ -370,6 +370,28 @@ export const SEED_OA_ITEMS: readonly OaItem[] = [
     objectName: null,
     deletedAt: null,
   },
+  {
+    // 26-СЗ: ОА п.1.59 — IndicatorId 1646, UniqueMethod, DocNameMethodikId 1140; объект из ОА → FullNameObject
+    id: SeedIds.oaItemSzPb,
+    editionId: SeedIds.oaEditionCurrent,
+    itemNo: '1.59.',
+    methodikText: 'ФР.1.38.2021.40260',
+    methodikFgisId: null,
+    methodText: 'Прочие исследования (испытания); методы прочих исследований (испытаний) без уточнения',
+    methodFgisId: 1140,
+    objectType: 'Продукция',
+    indicatorText: 'Свинцовый эквивалент',
+    indicatorFgisId: '1646',
+    unitText: 'мм Pb',
+    unitFgisId: '743',
+    rangeText: '0,09 - 1,5',
+    rangeMin: 0.09,
+    rangeMax: 1.5,
+    isCalculated: false,
+    objectName:
+      'Средства индивидуальной защиты прочие, не включенные в другие группировки (передвижные и индивидуальные средства защиты, применяемые при проведении рентгенологических исследований)',
+    deletedAt: null,
+  },
 ]
 
 /** Эталонные сопоставления ТЗ §7.4 + uB из §6.5 где указаны. */
@@ -505,6 +527,13 @@ export const SEED_FORM_INDICATOR_MAPS: readonly FormIndicatorMap[] = [
     formId: SeedIds.formVentLite,
     sourceKey: 'air_exchange',
     oaItemId: SeedIds.oaItemVentExchange,
+    ub: null,
+  },
+  {
+    id: '44444444-4444-4444-8444-444444444420',
+    formId: SeedIds.formSzRandom,
+    sourceKey: 'pb_equivalent',
+    oaItemId: SeedIds.oaItemSzPb,
     ub: null,
   },
 ]

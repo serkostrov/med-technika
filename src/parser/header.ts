@@ -72,7 +72,7 @@ function collectListUntilNextAnchor(
  * наименование, зав.№, свидетельство, дата поверки, действительна до.
  */
 const SI_LINE_RE =
-  /^(.+?),\s*зав\.?\s*№\s*([^,]+?)(?:,\s*(?:свид(?:етельство)?\.?\s*(?:о\s*поверке)?\s*№?\s*([^,]+?))?)?(?:,\s*(?:от\s*)?(\d{2}\.\d{2}\.\d{4}))?(?:,?\s*действительн[ао]\s*до\s*(\d{2}\.\d{2}\.\d{4}))?/i
+  /^(.+?),\s*зав\.?\s*№\s*([^,\r\n]+?)(?=\s*(?:,|\.\s|\.?$|[\r\n]))(?:,\s*(?:свид(?:етельство)?\.?\s*(?:о\s*поверке)?\s*№?\s*([^,]+?))?)?(?:,\s*(?:от\s*)?(\d{2}\.\d{2}\.\d{4}))?(?:,?\s*действительн[ао]\s*до\s*(\d{2}\.\d{2}\.\d{4}))?/i
 
 /** «Зав. № 190006.» → 190006 */
 function cleanSerial(raw: string | null | undefined): string | null {
@@ -159,6 +159,7 @@ function parsePlaceBlock(grid: SheetGrid, startRow: number): {
       a.includes('заказчик') ||
       a.includes('средства измер') ||
       a.includes('дата проведения') ||
+      a.includes('условия') ||
       a.includes('протокол оформил')
     ) {
       break
@@ -331,20 +332,27 @@ export function parseHeader(grid: SheetGrid): {
   ])
   const measureDates = parseMeasureDates(measureRaw)
 
+  // разделы шапки, на которых заканчивается любой список оборудования
+  // (порядок разделов в формах разный: в 26-СЗ испытательное идёт раньше вспомогательного)
+  const LIST_STOPS = [
+    'средства измерен',
+    'вспомогательное оборудование',
+    'испытательное оборудование',
+    'нормативные документы',
+    'обозначение нд',
+    'обозначение',
+    'место проведения',
+    'условия',
+    'температура',
+    'результаты',
+  ]
+
   const siRows = findAnchorRows(grid, [
     'средства измерения:',
     'средства измерений:',
   ])
   if (siRows.length > 0) {
-    const lines = collectListUntilNextAnchor(grid, siRows[0]!, [
-      'вспомогательное оборудование',
-      'испытательное оборудование',
-      'обозначение нд',
-      'обозначение',
-      'условия',
-      'температура',
-      'результаты',
-    ])
+    const lines = collectListUntilNextAnchor(grid, siRows[0]!, LIST_STOPS)
     for (const line of lines) {
       const parsed = parseSiLine(line)
       if (parsed) equipment.push(parsed)
@@ -354,12 +362,7 @@ export function parseHeader(grid: SheetGrid): {
 
   const auxRows = findAnchorRows(grid, ['вспомогательное оборудование:'])
   if (auxRows.length > 0) {
-    const lines = collectListUntilNextAnchor(grid, auxRows[0]!, [
-      'испытательное оборудование',
-      'обозначение',
-      'условия',
-      'результаты',
-    ])
+    const lines = collectListUntilNextAnchor(grid, auxRows[0]!, LIST_STOPS)
     for (const line of lines) {
       equipment.push(parseAuxLine(line, EquipmentKind.aux))
     }
@@ -367,11 +370,7 @@ export function parseHeader(grid: SheetGrid): {
 
   const testRows = findAnchorRows(grid, ['испытательное оборудование:'])
   if (testRows.length > 0) {
-    const lines = collectListUntilNextAnchor(grid, testRows[0]!, [
-      'обозначение',
-      'условия',
-      'результаты',
-    ])
+    const lines = collectListUntilNextAnchor(grid, testRows[0]!, LIST_STOPS)
     for (const line of lines) {
       equipment.push(parseAuxLine(line, EquipmentKind.test))
     }
@@ -385,8 +384,13 @@ export function parseHeader(grid: SheetGrid): {
   const engRows = findAnchorRows(grid, ['протокол оформил:'])
   if (engRows.length > 0) {
     const r = engRows[0]!
-    // последняя непустая ячейка строки
-    for (let c = HEADER_SCAN_MAX; c >= 0; c--) {
+    // сначала ячейка вида «Фамилия И.О.» (правее могут быть служебные расчёты шаблона,
+    // напр. «пластина 3» в 26-СЗ), иначе — последняя непустая ячейка строки
+    for (let c = 0; c <= HEADER_MAX_COL && !engineerShortName; c++) {
+      const m = /^([А-ЯЁ][а-яё-]+\s+[А-ЯЁ]\.\s*[А-ЯЁ]\.)$/.exec(normalizeText(cellText(grid, r, c)))
+      if (m) engineerShortName = m[1]!
+    }
+    for (let c = HEADER_SCAN_MAX; c >= 0 && !engineerShortName; c--) {
       const t = cellText(grid, r, c)
       if (t && !normalizeText(t).toLowerCase().includes('протокол оформил')) {
         // «инженер Судницын А.В.» → берём как есть / хвост

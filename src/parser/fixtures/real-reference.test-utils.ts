@@ -37,7 +37,10 @@ export type RealReferenceSetup = {
   }
   /** сотрудник-испытатель, которого нет в seed */
   engineer?: { shortName: string; fullName: string; surname: string; fgisIdFullName: number }
-  /** зав.№ → EquipmentId ФГИС (null — СИ без кода, в XML не попадает) */
+  /**
+   * зав.№ → EquipmentId ФГИС (null — СИ без кода, в XML не попадает).
+   * Ключ `name:<наименование>` — оборудование без номера («б/н»).
+   */
   equipment: Record<string, number | null>
   /** ручные правки карточки после загрузки (как сделал бы инженер) */
   protocolPatch?: Partial<Pick<Protocol, 'customerPhone'>>
@@ -90,13 +93,15 @@ export async function buildRealProtocolXml(setup: RealReferenceSetup): Promise<{
       deletedAt: null,
     })
   }
-  for (const [serial, fgisId] of Object.entries(setup.equipment)) {
+  for (const [key, fgisId] of Object.entries(setup.equipment)) {
     const id = crypto.randomUUID()
+    const byName = key.startsWith('name:')
+    const serial = byName ? null : key
     db.equipment.push({
       id,
-      name: `СИ ${serial}`,
+      name: byName ? key.slice(5) : `СИ ${key}`,
       serialNo: serial,
-      serialNorm: normalizeSerial(serial),
+      serialNorm: serial ? normalizeSerial(serial) : null,
       invNo: null,
       fgisEquipmentId: fgisId,
       kind: EquipmentKind.si,
@@ -106,7 +111,7 @@ export async function buildRealProtocolXml(setup: RealReferenceSetup): Promise<{
     db.equipmentVerifications.push({
       id: crypto.randomUUID(),
       equipmentId: id,
-      certNo: `C-${serial}`,
+      certNo: `C-${key}`,
       verifiedOn: '2026-01-01',
       validUntil: '2027-12-31',
       createdAt: new Date().toISOString(),

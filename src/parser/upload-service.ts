@@ -330,6 +330,15 @@ export class ProtocolUploadService {
       this.db.protocolResults.push(row)
     }
 
+    // нет «Наименование объекта» в протоколе (26-СЗ) — объект из позиции ОА первого результата
+    if (!protocol.objectFullName?.trim()) {
+      const firstOa = this.db.protocolResults.find(
+        (r) => r.protocolId === protocol.id && r.oaItemId,
+      )?.oaItemId
+      const oa = firstOa ? this.db.oaItems.find((i) => i.id === firstOa) : undefined
+      protocol.objectFullName = objectNameFromOa(oa?.objectName ?? null)
+    }
+
     for (const eq of input.parsed.equipment) {
       const matched = this.matchEquipment(eq.serialRaw, eq.name)
       const row: ProtocolEquipment = {
@@ -390,4 +399,15 @@ export class ProtocolUploadService {
   ): string | null {
     return matchEquipment(this.db.equipment, serialRaw, name)?.id ?? null
   }
+}
+
+/**
+ * «Средства индивидуальной защиты прочие… (передвижные и индивидуальные средства защиты…)»
+ * → уточнение в скобках, как в выгрузке клиента 125-26-СЗ; без скобок — текст целиком.
+ */
+export function objectNameFromOa(objectName: string | null): string | null {
+  const t = objectName?.trim()
+  if (!t) return null
+  const m = /\(([^()]+)\)\s*$/.exec(t)
+  return (m ? m[1]! : t).trim()
 }

@@ -85,10 +85,21 @@ export const SEED_PROTOCOL_FORMS: readonly ProtocolForm[] = [
     'Стоматологический',
     'Ангиограф',
   ]),
-  ...formBatch(6, 'шаблон-26-СЗ', 'sz', [
-    'Средства защиты (СЗ)_',
-    'Средства защиты (СЗ)_ РАНДОМ 25',
-  ]),
+  ...formBatch(6, 'шаблон-26-СЗ', 'sz', ['Средства защиты (СЗ)_']),
+  {
+    id: SeedIds.formSzRandom,
+    kindId: 6,
+    templateFile: 'шаблон-26-СЗ',
+    sheetName: 'Средства защиты (СЗ)_ РАНДОМ 25',
+    title: 'Средства защиты (СЗ)_ РАНДОМ 25',
+    parserProfile: 'sz',
+    status: FormStatus.ready,
+    // продукция; объект — из ОА (в протоколе нет «Наименование объекта») — эталон 125-26-СЗ
+    typeObjectId: 1,
+    fgisDirectory: 'DM-55254',
+    conditionsLimits: null,
+    settings: { numberSuffix: 'СЗ' },
+  },
   ...formBatch(7, 'шаблон-26-ИДК', 'idk', ['Протокол'], {
     manualMeasureDates: true,
   }),

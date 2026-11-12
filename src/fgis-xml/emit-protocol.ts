@@ -45,6 +45,25 @@ function labAddressId(settings: Setting[]): string {
   return v != null ? String(v) : '766884'
 }
 
+/**
+ * Адрес места измерений = адрес ИЛ? Настройка — короткая («пер. Искожевский, 16»),
+ * в протоколе — полный («610005, …, переулок Искожевский, дом 16, пом. 1002…», 26-СЗ).
+ * Совпадение: все значимые слова (≥ 4 букв) и номера из настройки есть в адресе.
+ */
+export function isLabAddress(address: string, labText: string): boolean {
+  const a = address.toLowerCase()
+  const lab = labText.toLowerCase().trim()
+  if (!lab) return false
+  if (a === lab) return true
+  const tokens = lab.match(/[a-zа-яё]{4,}|\d+/gi) ?? []
+  if (tokens.length === 0) return false
+  return tokens.every((t) =>
+    /^\d+$/.test(t)
+      ? new RegExp(`(^|\\D)${t}(\\D|$)`).test(a)
+      : a.includes(t),
+  )
+}
+
 function addressDetails(idAddrType: number, uniqueAddressText: string): string {
   return wrap(
     'AddressDetails',
@@ -160,9 +179,7 @@ export function emitProtocolXml(ctx: ProtocolXmlContext): string {
   const p = ctx.protocol
   const labText = labAddressText(ctx.settings)
   const measureAddr = (p.measureAddress ?? '').trim()
-  const territory =
-    measureAddr.length > 0 &&
-    measureAddr.toLowerCase() !== labText.toLowerCase()
+  const territory = measureAddr.length > 0 && !isLabAddress(measureAddr, labText)
 
   const content =
     ctx.omitContent || !ctx.pdfBytes

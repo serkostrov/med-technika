@@ -453,11 +453,11 @@ INSERT INTO protocol_forms (
     'Средства защиты (СЗ)_ РАНДОМ 25',
     'Средства защиты (СЗ)_ РАНДОМ 25',
     'sz',
-    'no_materials',
-    NULL,
+    'ready',
+    1,
     'DM-55254',
     NULL,
-    '{}'::jsonb
+    '{"numberSuffix":"СЗ"}'::jsonb
   ),
   (
     '33333333-3333-4333-8333-0000000002c6',

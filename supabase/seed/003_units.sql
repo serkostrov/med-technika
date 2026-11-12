@@ -15,7 +15,8 @@ INSERT INTO units (fgis_id, name, symbol) VALUES
   ('61', 'градус Цельсия', '°С'),
   ('90', 'метр в секунду', 'м/с'),
   ('110', 'кубический метр в час', 'м3/ч'),
-  ('1197', 'в час', 'час-1')
+  ('1197', 'в час', 'час-1'),
+  ('743', 'миллиметр свинца', 'мм Pb')
 ON CONFLICT (fgis_id) DO UPDATE SET name = EXCLUDED.name, symbol = EXCLUDED.symbol;
 
 INSERT INTO unit_conversions (from_symbol, to_symbol, factor) VALUES
