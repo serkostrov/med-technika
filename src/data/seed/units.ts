@@ -16,6 +16,9 @@ export const SEED_UNITS: readonly Unit[] = [
   // 26-О: эталон 150-26-О
   { fgisId: '64', name: 'люкс', symbol: 'лк' },
   { fgisId: '292', name: 'процент', symbol: '%' },
+  // 26-МК: эталон 204-26-МК
+  { fgisId: '61', name: 'градус Цельсия', symbol: '°С' },
+  { fgisId: '90', name: 'метр в секунду', symbol: 'м/с' },
 ]
 
 /** Начальный набор пересчётов ТЗ §7.5. */

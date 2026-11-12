@@ -97,9 +97,25 @@ export const SEED_PROTOCOL_FORMS: readonly ProtocolForm[] = [
     'Протокол МР 4.3.0212-20',
     'Протокол МР 4.3.0212-20 (LITE)',
   ]),
+  // Прил. Б: 3 формы — МИ / ГОСТ / БВЕК (раньше — одна запись с составным именем листа)
+  {
+    id: SeedIds.formMicroMi,
+    kindId: 9,
+    templateFile: 'шаблон-26-МК',
+    sheetName: 'Протокол Микроклимат МИ',
+    title: 'Протокол Микроклимат МИ',
+    parserProfile: 'micro',
+    status: FormStatus.ready,
+    // рабочие места; Directory пустой — как в эталоне 204-26-МК
+    typeObjectId: 10,
+    fgisDirectory: '',
+    conditionsLimits: null,
+    settings: { numberSuffix: 'МК' },
+  },
   ...formBatch(9, 'шаблон-26-МК', 'micro', [
-    'Протокол Микроклимат МИ / ГОСТ / БВЕК',
-  ]),
+    'Протокол Микроклимат ГОСТ',
+    'Протокол Микроклимат БВЕК',
+  ]).map((f, i) => ({ ...f, id: stableFormId(9, i + 1) })),
   {
     id: SeedIds.formLight,
     kindId: 10,

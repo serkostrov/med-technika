@@ -11,7 +11,9 @@ INSERT INTO units (fgis_id, name, symbol) VALUES
   ('993', 'нанотесла', 'нТл'),
   ('555', 'вольт на метр', 'В/м'),
   ('64', 'люкс', 'лк'),
-  ('292', 'процент', '%')
+  ('292', 'процент', '%'),
+  ('61', 'градус Цельсия', '°С'),
+  ('90', 'метр в секунду', 'м/с')
 ON CONFLICT (fgis_id) DO UPDATE SET name = EXCLUDED.name, symbol = EXCLUDED.symbol;
 
 INSERT INTO unit_conversions (from_symbol, to_symbol, factor) VALUES

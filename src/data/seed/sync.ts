@@ -32,6 +32,10 @@ export function syncSeedReferenceData(db: Database): boolean {
       seed.status !== FormStatus.no_materials
     ) {
       form.status = seed.status
+      // имя листа/заголовок тоже из кода: форму могли разделить (26-МК МИ / ГОСТ / БВЕК)
+      form.sheetName = seed.sheetName
+      form.title = seed.title
+      form.templateFile = seed.templateFile
       form.parserProfile = seed.parserProfile
       form.typeObjectId = seed.typeObjectId
       form.fgisDirectory = seed.fgisDirectory

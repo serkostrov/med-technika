@@ -53,6 +53,31 @@ describe('syncSeedReferenceData', () => {
     expect(syncSeedReferenceData(db)).toBe(false)
   })
 
+  it('26-МК: старая составная запись «МИ / ГОСТ / БВЕК» становится листом МИ, ГОСТ и БВЕК добавляются', () => {
+    const db = createEmptyDatabase()
+    db.protocolForms = db.protocolForms.filter((f) => f.kindId !== 9)
+    db.protocolForms.push({
+      id: SeedIds.formMicroMi,
+      kindId: 9,
+      templateFile: 'шаблон-26-МК',
+      sheetName: 'Протокол Микроклимат МИ / ГОСТ / БВЕК',
+      title: 'Протокол Микроклимат МИ / ГОСТ / БВЕК',
+      parserProfile: 'micro',
+      status: FormStatus.no_materials,
+      typeObjectId: null,
+      fgisDirectory: 'DM-55254',
+      conditionsLimits: null,
+      settings: {},
+    })
+    syncSeedReferenceData(db)
+    const micro = db.protocolForms.filter((f) => f.kindId === 9)
+    expect(micro.map((f) => [f.sheetName, f.status])).toEqual([
+      ['Протокол Микроклимат МИ', FormStatus.ready],
+      ['Протокол Микроклимат ГОСТ', FormStatus.no_materials],
+      ['Протокол Микроклимат БВЕК', FormStatus.no_materials],
+    ])
+  })
+
   it('свежая БД уже синхронна', () => {
     expect(syncSeedReferenceData(createEmptyDatabase())).toBe(false)
   })

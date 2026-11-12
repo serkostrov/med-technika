@@ -184,7 +184,8 @@ function parsePlaceBlock(grid: SheetGrid, startRow: number): {
 }
 
 const CONDITION_LABELS: { key: 't' | 'rh' | 'p'; re: RegExp }[] = [
-  { key: 't', re: /^температура/ },
+  // «Температура наружного воздуха» (26-МК) — не условия в помещении
+  { key: 't', re: /^температура(?!\s+наружн)/ },
   { key: 'rh', re: /^(отн\.?\s*|относительная\s+)?влажность/ },
   { key: 'p', re: /^(атмосферное\s+)?давление|^атмосферн/ },
 ]

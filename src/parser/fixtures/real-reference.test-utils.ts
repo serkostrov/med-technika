@@ -65,7 +65,17 @@ export async function buildRealProtocolXml(setup: RealReferenceSetup): Promise<{
     createdAt: new Date().toISOString(),
     deletedAt: null,
   })
-  if (setup.engineer) {
+  const existing = setup.engineer
+    ? db.staff.find((s) => s.surname === setup.engineer!.surname)
+    : undefined
+  if (setup.engineer && existing) {
+    // сотрудник уже есть в seed (Громов) — дополняем кодом ФГИС, как в справочнике клиента
+    Object.assign(existing, {
+      shortName: setup.engineer.shortName,
+      fullName: setup.engineer.fullName,
+      fgisIdFullName: setup.engineer.fgisIdFullName,
+    })
+  } else if (setup.engineer) {
     db.staff.push({
       id: crypto.randomUUID(),
       authUserId: null,
@@ -140,4 +150,11 @@ export const KORSHUNOV = {
   fullName: 'Коршунов Евгений Владимирович',
   surname: 'Коршунов',
   fgisIdFullName: 175412,
+} as const
+
+export const GROMOV = {
+  shortName: 'Громов А.В.',
+  fullName: 'Громов А.В.',
+  surname: 'Громов',
+  fgisIdFullName: 293723,
 } as const
