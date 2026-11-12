@@ -32,7 +32,8 @@ function equipmentNameKey(name: string): string {
   return name
     .toLowerCase()
     .replace(/(^|[\s,])б\s*\/\s*н\.?(?=$|[\s,.])/g, ' ')
-    .replace(/[«»"'.,;:()]/g, ' ')
+    // «Диафрагма – коллиматор» (справочник) ≡ «Диафрагма-коллиматор» (протокол)
+    .replace(/[«»"'.,;:()\-–—]/g, ' ')
     .replace(/\s+/g, ' ')
     .trim()
 }
