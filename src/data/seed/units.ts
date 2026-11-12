@@ -13,6 +13,9 @@ export const SEED_UNITS: readonly Unit[] = [
   // 26-ПЧ: MeasurementId из эталона 52-26-ПЧ
   { fgisId: '993', name: 'нанотесла', symbol: 'нТл' },
   { fgisId: '555', name: 'вольт на метр', symbol: 'В/м' },
+  // 26-О: эталон 150-26-О
+  { fgisId: '64', name: 'люкс', symbol: 'лк' },
+  { fgisId: '292', name: 'процент', symbol: '%' },
 ]
 
 /** Начальный набор пересчётов ТЗ §7.5. */

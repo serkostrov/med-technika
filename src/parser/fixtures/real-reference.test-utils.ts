@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { AppRole, CustomerKindId, EquipmentKind } from '@/domain'
+import { AppRole, CustomerKindId, EquipmentKind, type Protocol } from '@/domain'
 import { normalizeSerial } from '@/dictionaries/normalize/text'
 import { canonicalizeFgisXml } from '@/fgis-xml'
 import { bootstrapServer, SeedCredentials } from '@/server'
@@ -39,6 +39,8 @@ export type RealReferenceSetup = {
   engineer?: { shortName: string; fullName: string; surname: string; fgisIdFullName: number }
   /** зав.№ → EquipmentId ФГИС (null — СИ без кода, в XML не попадает) */
   equipment: Record<string, number | null>
+  /** ручные правки карточки после загрузки (как сделал бы инженер) */
+  protocolPatch?: Partial<Pick<Protocol, 'customerPhone'>>
 }
 
 export async function buildRealProtocolXml(setup: RealReferenceSetup): Promise<{
@@ -112,6 +114,9 @@ export async function buildRealProtocolXml(setup: RealReferenceSetup): Promise<{
     parsed: up.parsed!,
   })
   api.updateProtocol(head, saved.id, { applicationDate: setup.applicationDate })
+  if (setup.protocolPatch) {
+    Object.assign(db.protocols.find((p) => p.id === saved.id)!, setup.protocolPatch)
+  }
 
   const detail = api.getProtocolDetail(head, saved.id)
   return {

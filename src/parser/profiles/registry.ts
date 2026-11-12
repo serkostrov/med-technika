@@ -4,6 +4,7 @@ import { parsePhysioBb } from './physio-bb'
 import { parsePhysioDf } from './physio-df'
 import { parseNoise } from './noise'
 import { parseEmf } from './emf'
+import { parseLight } from './light'
 import type { SheetGrid } from '../sheet-utils'
 import type { ParsedObject, ParsedResult } from '../types'
 import { PROFILE_VERSIONS, type KnownParserProfile } from '../version'
@@ -23,6 +24,7 @@ const PROFILES: Record<KnownParserProfile, ProfileRunner> = {
   'physio-df': parsePhysioDf,
   noise: (grid) => parseNoise(grid),
   emf: (grid) => parseEmf(grid),
+  light: (grid) => parseLight(grid),
 }
 
 export function isImplementedProfile(

@@ -119,6 +119,7 @@ describe('Domain integrity & seed', () => {
     const seed = createSeedBundle()
     const ready = seed.protocolForms.filter((f) => f.status === 'ready')
     expect(ready.map((f) => f.sheetName).sort()).toEqual([
+      'ГОСТ 24940-2016',
       'ГОСТ 9612',
       'Дефибриллятор ИЭВИ',
       'НЧ-терапия',

@@ -531,11 +531,11 @@ INSERT INTO protocol_forms (
     'ГОСТ 24940-2016',
     'ГОСТ 24940-2016',
     'light',
-    'no_materials',
+    'ready',
+    10,
+    '',
     NULL,
-    'DM-55254',
-    NULL,
-    '{}'::jsonb
+    '{"numberSuffix":"О"}'::jsonb
   ),
   (
     '33333333-3333-4333-8333-000000000456',

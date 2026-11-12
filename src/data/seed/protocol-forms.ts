@@ -100,7 +100,20 @@ export const SEED_PROTOCOL_FORMS: readonly ProtocolForm[] = [
   ...formBatch(9, 'шаблон-26-МК', 'micro', [
     'Протокол Микроклимат МИ / ГОСТ / БВЕК',
   ]),
-  ...formBatch(10, 'шаблон-26-О', 'light', ['ГОСТ 24940-2016']),
+  {
+    id: SeedIds.formLight,
+    kindId: 10,
+    templateFile: 'шаблон-26-О',
+    sheetName: 'ГОСТ 24940-2016',
+    title: 'ГОСТ 24940-2016',
+    parserProfile: 'light',
+    status: FormStatus.ready,
+    // рабочие места; Directory пустой — как в эталоне 150-26-О
+    typeObjectId: 10,
+    fgisDirectory: '',
+    conditionsLimits: null,
+    settings: { numberSuffix: 'О' },
+  },
   ...formBatch(11, 'шаблон-26-ПП', 'emf', ['МУК 4.3.2491-09']),
   ...formBatch(12, 'шаблон-26-ПЧ', 'emf', ['БВЕК.431440.08.04 РЭ']),
   {
