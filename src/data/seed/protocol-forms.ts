@@ -97,7 +97,17 @@ export const SEED_PROTOCOL_FORMS: readonly ProtocolForm[] = [
     'Палатник',
     'Стоматологический',
     'Ангиограф',
-  ]),
+  ]).map((f) =>
+    f.sheetName === 'Стоматологический'
+      ? {
+          ...f,
+          // эталон 328-26-РК: помещения/территории (TypeObjectId 8), объект — из ОА п.3.8
+          status: FormStatus.ready,
+          typeObjectId: 8,
+          settings: { numberSuffix: 'РК', objectFullNameFromOa: true },
+        }
+      : f,
+  ),
   ...formBatch(6, 'шаблон-26-СЗ', 'sz', ['Средства защиты (СЗ)_']),
   {
     id: SeedIds.formSzRandom,

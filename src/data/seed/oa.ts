@@ -686,6 +686,50 @@ export const SEED_OA_ITEMS: readonly OaItem[] = [
     objectName: 'Аппараты рентгенографические',
     deletedAt: null,
   },
+  {
+    // 26-РК: ОА п.3.8 — эталон 328-26-РК
+    id: SeedIds.oaItemRkH10,
+    editionId: SeedIds.oaEditionCurrent,
+    itemNo: '3.8.',
+    methodikText: 'МУК 2.6.1.3829-22',
+    methodikFgisId: 4543794,
+    methodText: 'Радиационный контроль и мониторинг, включая радиохимию; прочие методы радиационных исследований (испытаний)',
+    methodFgisId: 1126,
+    objectType: 'Окружающая среда',
+    indicatorText: 'Мощность амбиентного эквивалента дозы кратковременно действующего непрерывного рентгеновского и гамма-излучения',
+    indicatorFgisId: '165769',
+    unitText: 'Зв/ч',
+    unitFgisId: '664',
+    rangeText: null,
+    rangeMin: null,
+    rangeMax: null,
+    isCalculated: false,
+    objectName:
+      'Помещения/Здания, имеющие источник излучения (в т.ч. рентгеновские установки) ; Территории, прилегающие к источникам излучений',
+    deletedAt: null,
+  },
+  {
+    // 26-РК: ОА п.3.8 — эталон 328-26-РК
+    id: SeedIds.oaItemRkEeff,
+    editionId: SeedIds.oaEditionCurrent,
+    itemNo: '3.8.',
+    methodikText: 'МУК 2.6.1.3829-22',
+    methodikFgisId: 4543794,
+    methodText: 'Радиационный контроль и мониторинг, включая радиохимию; прочие методы радиационных исследований (испытаний)',
+    methodFgisId: 1126,
+    objectType: 'Окружающая среда',
+    indicatorText: 'Мощность эффективной дозы',
+    indicatorFgisId: '14818',
+    unitText: 'указание не требуется',
+    unitFgisId: '0',
+    rangeText: null,
+    rangeMin: null,
+    rangeMax: null,
+    isCalculated: true,
+    objectName:
+      'Помещения/Здания, имеющие источник излучения (в т.ч. рентгеновские установки) ; Территории, прилегающие к источникам излучений',
+    deletedAt: null,
+  },
 ]
 
 /** Эталонные сопоставления ТЗ §7.4 + uB из §6.5 где указаны. */
@@ -926,6 +970,20 @@ export const SEED_FORM_INDICATOR_MAPS: readonly FormIndicatorMap[] = [
     formId: SeedIds.formXrayDental,
     sourceKey: 'low_contrast',
     oaItemId: SeedIds.oaItemXrLowContrast,
+    ub: null,
+  },
+  {
+    id: '44444444-4444-4444-8444-444444444430',
+    formId: SeedIds.formRkDental,
+    sourceKey: 'h10',
+    oaItemId: SeedIds.oaItemRkH10,
+    ub: null,
+  },
+  {
+    id: '44444444-4444-4444-8444-444444444431',
+    formId: SeedIds.formRkDental,
+    sourceKey: 'e_eff',
+    oaItemId: SeedIds.oaItemRkEeff,
     ub: null,
   },
 ]

@@ -15,6 +15,8 @@ import {
 import type { ParsedEquipment, ParsedMetadata, ParsedNdRow } from './types'
 
 const HEADER_SCAN_MAX = 40
+/** Пункт списка в строке заголовка — только левее подсказок шаблона (AO и правее). */
+const LIST_INLINE_MAX_COL = 40
 
 function firstAnchorValue(grid: SheetGrid, anchors: string[]): string {
   const rows = findAnchorRows(grid, anchors)
@@ -46,7 +48,12 @@ function collectListUntilNextAnchor(
 ): string[] {
   const stops = stopAnchors.map((a) => normalizeText(a).toLowerCase())
   const lines: string[] = []
+  // единственный пункт может стоять в строке заголовка
+  // («Испытательное оборудование: фантом (водный)…», 26-РК); правее AN — подсказки шаблона
   let buf = ''
+  for (let c = 1; c < LIST_INLINE_MAX_COL && !buf; c++) {
+    buf = cellText(grid, startRow, c).trim()
+  }
   for (let r = startRow + 1; r <= grid.maxRow; r++) {
     // скрытые строки (СИ, не применявшиеся в этом протоколе) не печатаются
     if (isRowHidden(grid, r)) continue

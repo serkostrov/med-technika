@@ -9,6 +9,7 @@ import { parseMicro } from './micro'
 import { parseVent } from './vent'
 import { parseSz } from './sz'
 import { parseXray } from './xray'
+import { parseRk } from './rk'
 import type { SheetGrid } from '../sheet-utils'
 import type { ParsedObject, ParsedResult } from '../types'
 import { PROFILE_VERSIONS, type KnownParserProfile } from '../version'
@@ -33,6 +34,7 @@ const PROFILES: Record<KnownParserProfile, ProfileRunner> = {
   vent: (grid) => parseVent(grid),
   sz: (grid) => parseSz(grid),
   xray: (grid) => parseXray(grid),
+  rk: (grid) => parseRk(grid),
 }
 
 export function isImplementedProfile(
