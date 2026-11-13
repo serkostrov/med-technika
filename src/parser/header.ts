@@ -25,11 +25,14 @@ function firstAnchorValue(grid: SheetGrid, anchors: string[]): string {
 function rowListText(grid: SheetGrid, r: number): string {
   const aRaw = cellText(grid, r, COL.A)
   const right = valueRightOf(grid, r)
-  // numbered list often in A itself
-  if (/^\d+[).]/.test(aRaw)) {
+  // в A только номер «1.» — текст пункта правее
+  if (/^\d+[).]\s*$/.test(aRaw)) {
     return (aRaw + (right ? ' ' + right : '')).trim()
   }
-  return (right || aRaw).trim()
+  // текст пункта в A (с номером или без) — правее могут быть подсказки шаблона
+  // («для визиографа» в 26-ЭП), их не берём
+  if (aRaw.trim()) return aRaw.trim()
+  return right.trim()
 }
 
 /**

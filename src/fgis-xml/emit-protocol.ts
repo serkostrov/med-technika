@@ -140,6 +140,11 @@ function emitApprovedUser(engineer: Staff, approver: Staff): string {
   )
 }
 
+function textIndicatorDirectory(form: ProtocolForm): string {
+  const v = form.settings.textIndicatorDirectory
+  return typeof v === 'string' ? v : form.fgisDirectory
+}
+
 function emitResearch(result: ProtocolResult, ctx: ProtocolXmlContext): string {
   const oa = result.oaItemId ? ctx.oaById.get(result.oaItemId) : undefined
   const indicatorId = oa?.indicatorFgisId?.trim() ?? ''
@@ -159,10 +164,17 @@ function emitResearch(result: ProtocolResult, ctx: ProtocolXmlContext): string {
   const info = [
     el('IndicatorId', indicatorId),
     el('UniqueIndicator', uniqueIndicator),
-    // справочник — настройка формы (у 26-Ш и др. рабочих мест он пустой)
-    el('Directory', ctx.form.fgisDirectory),
+    // справочник — настройка формы (у 26-Ш и др. рабочих мест он пустой);
+    // для текстовых показателей форма может задать свой (26-ЭП: пустой)
+    el('Directory', indicatorId ? ctx.form.fgisDirectory : textIndicatorDirectory(ctx.form)),
     el('FactValue', result.factValue),
-    el('MeasurementId', unit?.fgisId ?? ''),
+    // нет единицы («наличие», расчётные коэффициенты) — элемент не выводим, как в эталонах
+    unit?.fgisId ? el('MeasurementId', unit.fgisId) : '',
+    // единицы в протоколе нет — текстовая единица позиции ОА
+    // («наличие/отсутствие», «указание не требуется» — эталон 426-26-ЭП)
+    !result.unitSymbol && oa?.unitText?.trim() && (!oa.unitFgisId || oa.unitFgisId === '0')
+      ? el('UniqueMeasurement', oa.unitText.trim())
+      : '',
     el('DocNameId', docNameId),
     el('UniqueMethod', uniqueMethod),
     el('DocNameMethodikId', methodikDocId),

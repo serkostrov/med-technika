@@ -232,11 +232,11 @@ INSERT INTO protocol_forms (
     'Дентальный с визиографом и без',
     'Дентальный с визиографом и без',
     'xray',
-    'no_materials',
-    NULL,
+    'ready',
+    1,
     'DM-55254',
     NULL,
-    '{}'::jsonb
+    '{"numberSuffix":"ЭП","objectFullNameFromOa":true,"textIndicatorDirectory":""}'::jsonb
   ),
   (
     '33333333-3333-4333-8333-000000000136',

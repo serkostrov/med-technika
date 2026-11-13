@@ -1,5 +1,5 @@
 /** Глобальная версия парсера. Любое изменение логики повышает версию (ТЗ §6.7). */
-export const PARSER_VERSION = '1.6.0'
+export const PARSER_VERSION = '1.7.0'
 
 export const PROFILE_VERSIONS = {
   'physio-bb': '1.0.0',
@@ -10,6 +10,7 @@ export const PROFILE_VERSIONS = {
   micro: '1.0.0',
   vent: '1.0.0',
   sz: '1.0.0',
+  xray: '1.0.0',
 } as const
 
 export type KnownParserProfile = keyof typeof PROFILE_VERSIONS

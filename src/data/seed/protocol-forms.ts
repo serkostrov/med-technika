@@ -67,8 +67,21 @@ export const SEED_PROTOCOL_FORMS: readonly ProtocolForm[] = [
     'Флюорограф с УРИ',
     'Маммограф пленка+цифра',
     'Ортопантомограф плёнка+цифра',
-    'Дентальный с визиографом и без',
   ]),
+  {
+    id: SeedIds.formXrayDental,
+    kindId: 2,
+    templateFile: 'шаблон-26-ЭП',
+    sheetName: 'Дентальный с визиографом и без',
+    title: 'Дентальный с визиографом и без',
+    parserProfile: 'xray',
+    status: FormStatus.ready,
+    // продукция; эталон 426-26-ЭП: FullNameObject из ОА, у текстовых показателей Directory пустой
+    typeObjectId: 1,
+    fgisDirectory: 'DM-55254',
+    conditionsLimits: null,
+    settings: { numberSuffix: 'ЭП', objectFullNameFromOa: true, textIndicatorDirectory: '' },
+  },
   ...formBatch(3, 'шаблон-26-ЭП КТ', 'xray-ct', ['КТ периодич', 'КТ приёмка']),
   ...formBatch(5, 'шаблон-26-РК', 'rk', [
     '2 рабочих места',

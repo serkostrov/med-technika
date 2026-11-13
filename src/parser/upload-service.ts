@@ -330,13 +330,17 @@ export class ProtocolUploadService {
       this.db.protocolResults.push(row)
     }
 
-    // нет «Наименование объекта» в протоколе (26-СЗ) — объект из позиции ОА первого результата
-    if (!protocol.objectFullName?.trim()) {
+    // нет «Наименование объекта» в протоколе (26-СЗ) или форма берёт объект из ОА
+    // (26-ЭП: в шапке — конкретный аппарат, во ФГИС — «Аппараты рентгенографические»)
+    const form = this.db.protocolForms.find((f) => f.id === input.parsed.formId)
+    if (!protocol.objectFullName?.trim() || form?.settings.objectFullNameFromOa === true) {
       const firstOa = this.db.protocolResults.find(
         (r) => r.protocolId === protocol.id && r.oaItemId,
       )?.oaItemId
       const oa = firstOa ? this.db.oaItems.find((i) => i.id === firstOa) : undefined
-      protocol.objectFullName = objectNameFromOa(oa?.objectName ?? null)
+      // нет объекта в ОА — оставляем то, что было в шапке
+      protocol.objectFullName =
+        objectNameFromOa(oa?.objectName ?? null) ?? protocol.objectFullName
     }
 
     for (const eq of input.parsed.equipment) {
