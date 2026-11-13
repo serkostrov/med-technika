@@ -730,6 +730,27 @@ export const SEED_OA_ITEMS: readonly OaItem[] = [
       'Помещения/Здания, имеющие источник излучения (в т.ч. рентгеновские установки) ; Территории, прилегающие к источникам излучений',
     deletedAt: null,
   },
+  {
+    // 26-ЭД: ОА п.3.3 — эталон 272-26-ЭД (DocNameId 4512934, метод 675)
+    id: SeedIds.oaItemEdDose,
+    editionId: SeedIds.oaEditionCurrent,
+    itemNo: '3.3.',
+    methodikText: 'МУ 2.6.1.2944-11',
+    methodikFgisId: 4512934,
+    methodText: 'Расчетный метод; расчетный метод',
+    methodFgisId: 675,
+    objectType: 'Окружающая среда',
+    indicatorText: 'Эффективная доза облучения пациентов',
+    indicatorFgisId: '1630',
+    unitText: 'указание не требуется',
+    unitFgisId: '0',
+    rangeText: null,
+    rangeMin: null,
+    rangeMax: null,
+    isCalculated: true,
+    objectName: 'Помещения/Здания, имеющие источник излучения (в т.ч. рентгеновские установки)',
+    deletedAt: null,
+  },
 ]
 
 /** Эталонные сопоставления ТЗ §7.4 + uB из §6.5 где указаны. */
@@ -984,6 +1005,21 @@ export const SEED_FORM_INDICATOR_MAPS: readonly FormIndicatorMap[] = [
     formId: SeedIds.formRkDental,
     sourceKey: 'e_eff',
     oaItemId: SeedIds.oaItemRkEeff,
+    ub: null,
+  },
+  {
+    // радиационный выход — та же позиция ОА, что у 26-ЭП (ID 2660, МР 0100/12883-07:34)
+    id: '44444444-4444-4444-8444-444444444440',
+    formId: SeedIds.formEdDental,
+    sourceKey: 'radiation_output',
+    oaItemId: SeedIds.oaItemXrOutput,
+    ub: null,
+  },
+  {
+    id: '44444444-4444-4444-8444-444444444441',
+    formId: SeedIds.formEdDental,
+    sourceKey: 'effective_dose',
+    oaItemId: SeedIds.oaItemEdDose,
     ub: null,
   },
 ]

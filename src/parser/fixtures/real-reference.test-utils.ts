@@ -43,7 +43,7 @@ export type RealReferenceSetup = {
    */
   equipment: Record<string, number | null>
   /** ручные правки карточки после загрузки (как сделал бы инженер) */
-  protocolPatch?: Partial<Pick<Protocol, 'customerPhone'>>
+  protocolPatch?: Partial<Pick<Protocol, 'customerPhone' | 'measureAddress'>>
 }
 
 export async function buildRealProtocolXml(setup: RealReferenceSetup): Promise<{

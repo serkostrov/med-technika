@@ -52,9 +52,15 @@ export function detectForm(
   for (const grid of grids) {
     if (sheetLooksService(grid.name)) continue
     const sheetNorm = normalizeSheetName(grid.name)
-    const form = readyOrKnown.find(
+    // одно имя листа бывает в двух шаблонах (26-ЭД обычный / расширенный:
+    // «Дентальный_», «КТ_»…) — берём готовую форму с реализованным профилем
+    const sameSheet = readyOrKnown.filter(
       (f) => normalizeSheetName(f.sheetName) === sheetNorm,
     )
+    const form =
+      sameSheet.find(
+        (f) => f.status !== FormStatus.no_materials && isImplementedProfile(f.parserProfile),
+      ) ?? sameSheet[0]
     if (!form) continue
 
     // Профили без материалов не разбираем, кроме ready
