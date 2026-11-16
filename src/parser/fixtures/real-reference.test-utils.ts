@@ -21,6 +21,29 @@ export function realReferenceXml(name: string): string {
   return readFileSync(join(HERE, '../../fgis-xml/fixtures/real', `${name}.xml`), 'utf8')
 }
 
+/**
+ * Эталон клиента с поправкой на ответы ИЛ, которые меняют выгрузку:
+ * добавить оборудование (секундомер выгружается — ИЛ 16.11.2026),
+ * заменить текст (адрес места — из протокола).
+ */
+export function adjustReference(
+  xml: string,
+  fix: { addEquipmentIds?: number[]; replace?: [from: string, to: string][] },
+): string {
+  let out = xml
+  for (const id of fix.addEquipmentIds ?? []) {
+    out = out.replace(
+      /<\/Equipment>/,
+      `<EquipmentDetails><EquipmentId>${id}</EquipmentId></EquipmentDetails></Equipment>`,
+    )
+  }
+  for (const [from, to] of fix.replace ?? []) {
+    if (!out.includes(from)) throw new Error(`adjustReference: нет «${from}» в эталоне`)
+    out = out.split(from).join(to)
+  }
+  return out
+}
+
 /** Канонизация + хвостовые пробелы текстов из ячеек Excel (FullNameObject и т.п.). */
 export function normalizeForCompare(xml: string): string {
   return canonicalizeFgisXml(xml).replace(/>([^<]*?)\s+</g, '>$1<')
@@ -34,6 +57,8 @@ export type RealReferenceSetup = {
     inn: string
     ogrn: string
     legalAddress: string
+    /** телефон в карточке заказчика (в XML — он, ИЛ 16.11.2026) */
+    phone?: string
   }
   /** сотрудник-испытатель, которого нет в seed */
   engineer?: { shortName: string; fullName: string; surname: string; fgisIdFullName: number }
@@ -61,7 +86,7 @@ export async function buildRealProtocolXml(setup: RealReferenceSetup): Promise<{
     kindId: CustomerKindId.legalEntity,
     inn: setup.customer.inn,
     ogrn: setup.customer.ogrn,
-    phone: null,
+    phone: setup.customer.phone ?? null,
     email: null,
     legalAddress: setup.customer.legalAddress,
     actualAddress: null,

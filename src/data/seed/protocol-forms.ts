@@ -7,7 +7,8 @@ import { SeedIds } from '@/data/ids'
  * status=ready — формы с материалами П+X (ТЗ App. Б) и готовым профилем.
  * Остальные — no_materials (без заполненного протокола и/или XML).
  *
- * Листы 26-ЭД («Дети_» и др.) и спорные приложения с [УТОЧНИТЬ]
+ * «Дети_» (26-ЭД), «Прил. МУК 4.3.2812-10» (26-О), «Кратность…» (26-АС) —
+ * приложения, не формы (ответ ИЛ 16.11.2026).
  * в seed не включаем до ответа клиента.
  */
 export const SEED_PROTOCOL_FORMS: readonly ProtocolForm[] = [
@@ -83,7 +84,7 @@ export const SEED_PROTOCOL_FORMS: readonly ProtocolForm[] = [
     settings: { numberSuffix: 'ЭП', objectFullNameFromOa: true, textIndicatorDirectory: '' },
   },
   ...formBatch(3, 'шаблон-26-ЭП КТ', 'xray-ct', ['КТ периодич', 'КТ приёмка']),
-  // 26-ЭД обычный (Прил. Б): «Дети_» — форма или приложение [вопрос к ИЛ]
+  // 26-ЭД обычный (Прил. Б); «Дети_» — приложение (ИЛ 16.11.2026), не форма
   ...formBatch(4, 'шаблон-26-ЭД обычный', 'dose', [
     'новый рентген аппараты и флюхи',
     'Ортопан и 3DКТ',
@@ -92,7 +93,6 @@ export const SEED_PROTOCOL_FORMS: readonly ProtocolForm[] = [
     'Взрослые_',
     'Флюорография_',
     'КТ_',
-    'Дети_',
   ]),
   // 26-ЭД расширенный: те же имена листов, что в «обычном», — id с индекса 20
   ...formBatch(4, 'шаблон-26-ЭД расширенный', 'dose', [
@@ -111,7 +111,6 @@ export const SEED_PROTOCOL_FORMS: readonly ProtocolForm[] = [
     'КТ_',
     'Взрослые_',
     'Флюорография_',
-    'Дети_',
   ]).map((f, i) => {
     const form = { ...f, id: stableFormId(4, 20 + i) }
     return f.sheetName === 'Дентальный_'
@@ -171,6 +170,12 @@ export const SEED_PROTOCOL_FORMS: readonly ProtocolForm[] = [
     'Протокол lite',
     'Протокол МР 4.3.0212-20',
   ]),
+  // листы новой редакции шаблона 26-АС — используются редко (ИЛ 16.11.2026);
+  // новая редакция — по отдельному соглашению (Прил. № 2, п. 4), нужны П+X
+  ...formBatch(8, 'шаблон-26-АС', 'vent', [
+    'Протокол ГОСТ 12.3.018-79',
+    'Протокол ГОСТ 34060-2017',
+  ]).map((f, i) => ({ ...f, id: stableFormId(8, 10 + i) })),
   {
     id: SeedIds.formVentLite,
     kindId: 8,

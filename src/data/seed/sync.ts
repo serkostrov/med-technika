@@ -5,6 +5,15 @@ import { SEED_UNITS } from './units'
 import { SEED_FORM_INDICATOR_MAPS, SEED_OA_ITEMS } from './oa'
 
 /**
+ * Формы, убранные из seed: «Дети_» 26-ЭД обычный / расширенный — приложения
+ * (ИЛ 16.11.2026). Удаляем из БД, только если на них нет протоколов.
+ */
+const RETIRED_FORM_IDS = new Set([
+  '33333333-3333-4333-8333-0000000001a1', // stableFormId(4, 7)
+  '33333333-3333-4333-8333-0000000001bd', // stableFormId(4, 20 + 15)
+])
+
+/**
  * Досинхронизация справочников из кода в уже существующую БД.
  *
  * Справочники попадают в БД один раз — при создании. Когда в коде появляется
@@ -19,6 +28,12 @@ import { SEED_FORM_INDICATOR_MAPS, SEED_OA_ITEMS } from './oa'
  */
 export function syncSeedReferenceData(db: Database): boolean {
   let changed = false
+
+  const before = db.protocolForms.length
+  db.protocolForms = db.protocolForms.filter(
+    (f) => !RETIRED_FORM_IDS.has(f.id) || db.protocols.some((p) => p.formId === f.id),
+  )
+  if (db.protocolForms.length !== before) changed = true
 
   for (const seed of SEED_PROTOCOL_FORMS) {
     const form = db.protocolForms.find((f) => f.id === seed.id)

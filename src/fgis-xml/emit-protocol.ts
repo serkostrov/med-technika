@@ -81,7 +81,8 @@ function emitCustomer(c: Customer, protocolPhone: string | null): string {
   if (c.inn?.trim()) parts.push(el('InnId', c.inn.trim()))
   if (c.ogrn?.trim()) parts.push(el('OgrnId', c.ogrn.trim()))
 
-  const phone = toFgisPhone(protocolPhone ?? c.phone)
+  // ИЛ 16.11.2026: телефон — из карточки заказчика; нет в карточке — из протокола
+  const phone = toFgisPhone(c.phone?.trim() ? c.phone : protocolPhone)
   if (phone) {
     parts.push(
       wrap(

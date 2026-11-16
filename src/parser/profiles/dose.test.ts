@@ -3,6 +3,7 @@ import { createSeedBundle } from '@/data/seed'
 import { parseProtocol } from '@/parser'
 import {
   KORSHUNOV,
+  adjustReference,
   buildRealProtocolXml,
   normalizeForCompare,
   realReferenceXml,
@@ -49,12 +50,17 @@ describe('26-ЭД расширенный «Дентальный_» — боев�
       engineer: KORSHUNOV,
       // коды — из «ID персонал и оборудование.xlsx» лаборатории
       equipment: { 'CB2-19090040': 1142539, '431019': 1142241, '26-14-00176': 3897355 },
-      // в Excel место испытаний — «ул. Сурикова, д. 31», в выгрузке — другой адрес [вопрос к ИЛ]
-      protocolPatch: {
-        measureAddress: '610016, Кировская область, город Киров, ул. Чернышевского, д. 7',
-      },
     })
     expect(built.resultsWithOa).toBe(24)
-    expect(normalizeForCompare(built.xml)).toBe(normalizeForCompare(realReferenceXml('272-26-ЭД')))
+    // адрес места испытаний — из протокола (ИЛ 16.11.2026); в эталоне введён вручную
+    const expected = adjustReference(realReferenceXml('272-26-ЭД'), {
+      replace: [
+        [
+          '610016, Кировская область, город Киров, ул. Чернышевского, д. 7',
+          '610014, Кировская область, город Киров, ул. Сурикова, д. 31',
+        ],
+      ],
+    })
+    expect(normalizeForCompare(built.xml)).toBe(normalizeForCompare(expected))
   })
 })

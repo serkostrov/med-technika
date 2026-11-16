@@ -78,6 +78,17 @@ describe('syncSeedReferenceData', () => {
     ])
   })
 
+  it('«Дети_» 26-ЭД (приложение, ИЛ 16.11.2026) удаляется из старой БД, если нет протоколов', () => {
+    const db = createEmptyDatabase()
+    const base = db.protocolForms.find((f) => f.kindId === 4)!
+    const retired = ['33333333-3333-4333-8333-0000000001a1', '33333333-3333-4333-8333-0000000001bd']
+    for (const id of retired) {
+      db.protocolForms.push({ ...base, id, sheetName: 'Дети_', title: 'Дети_' })
+    }
+    expect(syncSeedReferenceData(db)).toBe(true)
+    expect(db.protocolForms.some((f) => f.sheetName === 'Дети_')).toBe(false)
+  })
+
   it('свежая БД уже синхронна', () => {
     expect(syncSeedReferenceData(createEmptyDatabase())).toBe(false)
   })

@@ -50,7 +50,8 @@ describe('26-О освещённость (ГОСТ 24940-2016) — боевой 
     const built = await buildRealProtocolXml({
       name: '150-26-О',
       applicationDate: '2026-08-31',
-      customer: RADUGA_MED,
+      // телефон — из карточки заказчика (ИЛ 16.11.2026); в Excel «+78332463121»
+      customer: { ...RADUGA_MED, phone: '88332472131' },
       engineer: KORSHUNOV,
       equipment: {
         // коды — из «ID персонал и оборудование.xlsx» лаборатории
@@ -59,8 +60,6 @@ describe('26-О освещённость (ГОСТ 24940-2016) — боевой 
         '431019': 1142241,
         '26-14-00176': 3897355,
       },
-      // в Excel «+78332463121», в выгрузке — телефон из карточки заказчика
-      protocolPatch: { customerPhone: '88332472131' },
     })
     expect(built.resultsWithOa).toBe(16)
     expect(normalizeForCompare(built.xml)).toBe(normalizeForCompare(realReferenceXml('150-26-О')))

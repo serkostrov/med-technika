@@ -3,6 +3,7 @@ import { createSeedBundle } from '@/data/seed'
 import { parseProtocol } from '@/parser'
 import {
   GROMOV,
+  adjustReference,
   buildRealProtocolXml,
   normalizeForCompare,
   realReferenceXml,
@@ -51,10 +52,11 @@ describe('26-МК микроклимат (МИ М.08−2021) — боевой 20
         legalAddress: '424004, Республика Марий Эл, г Йошкар-Ола, Первомайская ул, д. 49, помещ. 2',
       },
       engineer: GROMOV,
-      // в справочнике у секундомера 567064, но в этой выгрузке его нет [вопрос к ИЛ]
-      equipment: { '431019': 1142241, '26-14-00176': 3897355, '3069': null },
+      // секундомер выгружается (ИЛ 16.11.2026), хотя в этом эталоне его нет
+      equipment: { '431019': 1142241, '26-14-00176': 3897355, '3069': 567064 },
     })
     expect(built.resultsWithOa).toBe(20)
-    expect(normalizeForCompare(built.xml)).toBe(normalizeForCompare(realReferenceXml('204-26-МК')))
+    const expected = adjustReference(realReferenceXml('204-26-МК'), { addEquipmentIds: [567064] })
+    expect(normalizeForCompare(built.xml)).toBe(normalizeForCompare(expected))
   })
 })

@@ -4,6 +4,7 @@ import { parseProtocol } from '@/parser'
 import {
   KORSHUNOV,
   RADUGA_MED,
+  adjustReference,
   buildRealProtocolXml,
   normalizeForCompare,
   realReferenceXml,
@@ -61,11 +62,12 @@ describe('26-Ш шум (ГОСТ ISO 9612) — боевой 29-26-Ш', { timeout
         '118316': 566956,
         '431019': 1142241,
         '26-14-00176': 3897355,
-        // в справочнике у секундомера 567064, но в этой выгрузке его нет [вопрос к ИЛ]
-        '3069': null,
+        // секундомер выгружается (ИЛ 16.11.2026), хотя в этом эталоне его нет
+        '3069': 567064,
       },
     })
     expect(built.resultsWithOa).toBe(6)
-    expect(normalizeForCompare(built.xml)).toBe(normalizeForCompare(realReferenceXml('29-26-Ш')))
+    const expected = adjustReference(realReferenceXml('29-26-Ш'), { addEquipmentIds: [567064] })
+    expect(normalizeForCompare(built.xml)).toBe(normalizeForCompare(expected))
   })
 })
