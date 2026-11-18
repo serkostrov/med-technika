@@ -169,10 +169,11 @@ export const SEED_PROTOCOL_FORMS: readonly ProtocolForm[] = [
     'Флюорография_',
   ]).map((f, i) => {
     const form = { ...f, id: stableFormId(4, 20 + i) }
-    return f.sheetName === 'Дентальный_'
+    // эталоны 272-26-ЭД (Дентальный_), 251 / 252-26-ЭД (новый рентген аппараты, палатник рентген)
+    return ['Дентальный_', 'новый рентген аппараты', 'палатник рентген'].includes(f.sheetName)
       ? {
           ...form,
-          // эталон 272-26-ЭД: продукция, объект — из ОА (радиационный выход)
+          // продукция, объект — из ОА (радиационный выход)
           status: FormStatus.ready,
           typeObjectId: 1,
           settings: { numberSuffix: 'ЭД', objectFullNameFromOa: true },

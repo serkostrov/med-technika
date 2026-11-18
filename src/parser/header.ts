@@ -177,7 +177,13 @@ function parsePlaceBlock(grid: SheetGrid, startRow: number): {
       break
     }
     if (a.startsWith('адрес')) {
-      address = valueRightOf(grid, r) || null
+      const v = valueRightOf(grid, r) || null
+      // 252-26-ЭД: в строке «Адрес:» только «корпус:», адрес вписан в «Место проведения»
+      if (v && /^(корпус|этаж|кабинет)\s*:/i.test(v)) {
+        if (place && /^\d{6},/.test(place)) address = place
+      } else {
+        address = v
+      }
       continue
     }
     const val = valueRightOf(grid, r) || cellText(grid, r, COL.A)

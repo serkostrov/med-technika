@@ -375,11 +375,11 @@ INSERT INTO protocol_forms (
     'новый рентген аппараты',
     'новый рентген аппараты',
     'dose',
-    'no_materials',
-    NULL,
+    'ready',
+    1,
     'DM-55254',
     NULL,
-    '{}'::jsonb
+    '{"numberSuffix":"ЭД","objectFullNameFromOa":true}'::jsonb
   ),
   (
     '33333333-3333-4333-8333-0000000001af',
@@ -388,11 +388,11 @@ INSERT INTO protocol_forms (
     'палатник рентген',
     'палатник рентген',
     'dose',
-    'no_materials',
-    NULL,
+    'ready',
+    1,
     'DM-55254',
     NULL,
-    '{}'::jsonb
+    '{"numberSuffix":"ЭД","objectFullNameFromOa":true}'::jsonb
   ),
   (
     '33333333-3333-4333-8333-0000000001b0',

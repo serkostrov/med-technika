@@ -34,6 +34,8 @@ export function adjustReference(
     replace?: [from: string, to: string][]
     /** продублировать N-ю запись ResearchObjectInfo (1-based) — запись, которую ИЛ пропустила */
     duplicateResultAt?: number
+    /** убрать N-й результат (1…): в эталоне выгружено то, чего по правилам нет (скрытая строка) */
+    removeResultAt?: number
     /** адрес места измерений (IdAddrType 3) — из протокола (ответ ИЛ 16.11.2026) */
     measureAddress?: string
   },
@@ -49,6 +51,12 @@ export function adjustReference(
     let n = 0
     out = out.replace(/<ResearchObjectInfo>[\s\S]*?<\/ResearchObjectInfo>/g, (m) =>
       ++n === fix.duplicateResultAt ? m + m : m,
+    )
+  }
+  if (fix.removeResultAt != null) {
+    let n = 0
+    out = out.replace(/<ResearchObjectInfo>[\s\S]*?<\/ResearchObjectInfo>/g, (m) =>
+      ++n === fix.removeResultAt ? '' : m,
     )
   }
   for (const id of fix.addEquipmentIds ?? []) {

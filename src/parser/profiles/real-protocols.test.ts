@@ -24,6 +24,8 @@ type Case = {
   adjust?: Parameters<typeof adjustReference>[1]
   /** эталон с другим порядком записей (старая программа клиента непоследовательна) */
   ignoreOrder?: boolean
+  /** в эталоне не все результаты (108 из 192 / 154) — сверяем первые N у обоих */
+  compareFirst?: number
   /** лист, если в книге заполнено несколько */
   sheet?: string
   /** эталон не соответствует присланному Excel — сверяем только разбор */
@@ -64,6 +66,22 @@ const CASES: Case[] = [
   },
   { name: '262-26-АС', results: 12, note: 'АС МР 4.3.0212-20 (полная таблица)' },
   // 26-ЭП. Утечка — по формату ячейки («0,07200»); в 403 / 426 эталон без хвостового нуля
+  // 26-ЭД расширенный: в обоих эталонах ровно 108 результатов — 251 обрезан на 108-м,
+  // в 252 после группы «7–12 лет» сразу последние 7 строк «от 17 лет» (вопрос ИЛ)
+  {
+    name: '251-26-ЭД',
+    results: 192,
+    note: 'ЭД расширенный: новый рентген аппараты',
+    compareFirst: 108,
+    adjust: { replace: [['<FactValue>0,519</FactValue>', '<FactValue>0,5190</FactValue>']] },
+  },
+  {
+    name: '252-26-ЭД',
+    results: 154,
+    note: 'ЭД расширенный: палатник; скрытый режим 0,009 в эталоне выгружен',
+    compareFirst: 100,
+    adjust: { removeResultAt: 7 },
+  },
   { name: '412-26-ЭП', results: 38, note: 'ЭП 2 р.м плёнка и цифра' },
   { name: '419-26-ЭП', results: 36, note: 'ЭП КТ периодич (точность установки U во ФГИС не выгружалась)' },
   { name: '385-26-ЭП', results: 35, note: 'ЭП Телеуправляемый УРИ+цифра' },
@@ -91,8 +109,14 @@ const CASES: Case[] = [
 ]
 
 // разбор реального xlsx + bootstrap сервера — дольше 5 с при параллельном прогоне
+const RESULT_RE = /<ResearchObjectInfo>[\s\S]*?<\/ResearchObjectInfo>/g
+function keepFirstResults(xml: string, n: number): string {
+  let i = 0
+  return xml.replace(RESULT_RE, (m) => (++i <= n ? m : ''))
+}
+
 describe('боевые протоколы лаборатории → XML = эталон', { timeout: 60_000 }, () => {
-  it.each(CASES)('$name ($note)', async ({ name, results, adjust, equipment, ignoreOrder, sheet, xmlFromOtherVersion }) => {
+  it.each(CASES)('$name ($note)', async ({ name, results, adjust, equipment, ignoreOrder, sheet, xmlFromOtherVersion, compareFirst }) => {
     const built = await buildRealProtocolXml({ name, customer: 'fromReference', lab: true, equipment, sheet })
     expect(built.resultsTotal).toBe(results)
     expect(built.resultsWithOa).toBe(results)
@@ -101,8 +125,9 @@ describe('боевые протоколы лаборатории → XML = эт�
       ? adjustReference(realReferenceXml(name), adjust)
       : realReferenceXml(name)
     const norm = ignoreOrder ? normalizeIgnoringResultOrder : normalizeForCompare
-    const a = norm(built.xml)
-    const b = norm(reference)
+    const cut = (xml: string) => (compareFirst ? keepFirstResults(xml, compareFirst) : xml)
+    const a = norm(cut(built.xml))
+    const b = norm(cut(reference))
     let i = 0
     while (i < a.length && a[i] === b[i]) i += 1
     const at = `[${name}] наш: …${a.slice(Math.max(0, i - 80), i + 120)}…

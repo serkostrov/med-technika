@@ -3249,6 +3249,38 @@ export const SEED_FORM_INDICATOR_MAPS: readonly FormIndicatorMap[] = [
     ub: null,
   },
   {
+    // 26-ЭД расширенный «новый рентген аппараты» (эталон 251-26-ЭД)
+    id: '44444444-4444-4444-8444-444444444442',
+    formId: '33333333-3333-4333-8333-0000000001ae',
+    sourceKey: 'radiation_output',
+    oaItemId: SeedIds.oaItemXrOutput,
+    ub: null,
+  },
+  {
+    // 26-ЭД расширенный «новый рентген аппараты» (эталон 251-26-ЭД)
+    id: '44444444-4444-4444-8444-444444444443',
+    formId: '33333333-3333-4333-8333-0000000001ae',
+    sourceKey: 'effective_dose',
+    oaItemId: SeedIds.oaItemEdDose,
+    ub: null,
+  },
+  {
+    // 26-ЭД расширенный «палатник рентген» (эталон 252-26-ЭД)
+    id: '44444444-4444-4444-8444-444444444444',
+    formId: '33333333-3333-4333-8333-0000000001af',
+    sourceKey: 'radiation_output',
+    oaItemId: SeedIds.oaItemXrOutput,
+    ub: null,
+  },
+  {
+    // 26-ЭД расширенный «палатник рентген» (эталон 252-26-ЭД)
+    id: '44444444-4444-4444-8444-444444444445',
+    formId: '33333333-3333-4333-8333-0000000001af',
+    sourceKey: 'effective_dose',
+    oaItemId: SeedIds.oaItemEdDose,
+    ub: null,
+  },
+  {
     id: '44444444-4444-4444-8444-444444444550',
     formId: '33333333-3333-4333-8333-00000000006e',
     sourceKey: 'сила тока, ма',

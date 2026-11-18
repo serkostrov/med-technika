@@ -16,6 +16,10 @@ import type { ParsedObject, ParsedResult } from '../types'
  * Радиационный выход (мА·мин) | Радиационный выход (мА·с) | Эффективная доза, мЗв».
  * Строки без чисел — группы («Взрослые», «Верхняя челюсть»), с числами — процедуры.
  * В ФГИС — радиационный выход на мА·с, затем эффективная доза (эталон 272-26-ЭД).
+ *
+ * «Расширенный» (эталоны 251 / 252-26-ЭД): радиационный выход — отдельной таблицей
+ * «Результаты расчёта радиационного выхода» по режимам (видимые строки), затем
+ * таблицы эффективной дозы по возрастам.
  */
 
 const OUTPUT_UNIT = 'мГр·м²/(мА·с)'
@@ -38,7 +42,7 @@ function tableColumns(grid: SheetGrid, r: number): Column[] | null {
     const t = cellText(grid, r, c)
     // «Радиаци-онный выход» — перенос со знаком дефиса
     const n = norm(t).replace(/-\s*/g, '').replace(/\s+/g, '')
-    if (n.startsWith('радиационныйвыход') && /ма[*·]с\)/.test(n)) {
+    if (isOutputHeader(t)) {
       cols.push({ col: c, key: 'radiation_output', unit: OUTPUT_UNIT })
     } else if (n.includes('эффективнаядоза')) {
       cols.push({ col: c, key: 'effective_dose', unit: unitAfterComma(t) })
@@ -57,6 +61,44 @@ function rowHasNumbers(grid: SheetGrid, r: number, cols: Column[]): boolean {
   return cols.some((c) => numericCell(grid, r, c.col) != null)
 }
 
+function isOutputHeader(text: string): boolean {
+  const n = norm(text).replace(/-\s*/g, '').replace(/\s+/g, '')
+  return n.startsWith('радиационныйвыход') && /ма[*·]с\)/.test(n)
+}
+
+/** «Результаты рас(с)чета радиационного выхода»: колонка «…/(мА·с)», строки режимов ниже. */
+function outputTable(grid: SheetGrid, objects: ParsedObject[], push: (r: number, c: number, objectSeq: number) => void) {
+  for (let h = 0; h <= grid.maxRow; h++) {
+    if (!/^результаты рас+ч[её]та радиационного выхода/.test(norm(cellText(grid, h, 0)))) continue
+    let col: number | null = null
+    let head = h
+    for (let r = h; r <= h + 3 && col == null; r++) {
+      for (let c = 1; c <= HEADER_MAX_COL && col == null; c++) {
+        if (isOutputHeader(cellText(grid, r, c))) {
+          col = c
+          head = r
+        }
+      }
+    }
+    if (col == null) return
+    for (let r = head + 1; r <= grid.maxRow; r++) {
+      const a = norm(cellText(grid, r, 0))
+      if (a.startsWith('примечание') || a.startsWith('протокол оформил') || a.startsWith('результаты')) break
+      if (isRowHidden(grid, r) || !numericCell(grid, r, col)) continue
+      const objectSeq = objects.length + 1
+      objects.push({
+        seq: objectSeq,
+        name: `режим ${normalizeText(cellText(grid, r, 0))} м`,
+        serialNo: null,
+        year: null,
+        department: 'Радиационный выход',
+      })
+      push(r, col, objectSeq)
+    }
+    return
+  }
+}
+
 export function parseDose(grid: SheetGrid): {
   objects: ParsedObject[]
   results: ParsedResult[]
@@ -65,6 +107,31 @@ export function parseDose(grid: SheetGrid): {
   const log: string[] = []
   const objects: ParsedObject[] = []
   const results: ParsedResult[] = []
+
+  const pushResult = (r: number, c: number, objectSeq: number, key: string, unit: string | null) => {
+    const cell = numericCell(grid, r, c)
+    if (!cell || typeof cell.v !== 'number') return
+    const z = cell.z && cell.z !== 'General' ? cell.z : 'General'
+    results.push({
+      seq: results.length + 1,
+      objectSeq,
+      sourceKey: key,
+      indicatorRaw: `${objects[objectSeq - 1]!.department ?? ''}: ${objects[objectSeq - 1]!.name}`,
+      unitSymbol: unit,
+      setValue: null,
+      rawValues: null,
+      avgExcel: cell.v,
+      uExcel: null,
+      ubExcel: null,
+      avgCalc: null,
+      uCalc: null,
+      numberFormat: cell.z ?? null,
+      factValue: formatFactValue(cell.v, z),
+      displayValue: cell.v,
+    })
+  }
+
+  outputTable(grid, objects, (r, c, seq) => pushResult(r, c, seq, 'radiation_output', OUTPUT_UNIT))
 
   for (let h = 0; h <= grid.maxRow; h++) {
     if (isRowHidden(grid, h)) continue
@@ -98,28 +165,7 @@ export function parseDose(grid: SheetGrid): {
     }
 
     for (const col of columns) {
-      for (const p of rows) {
-        const cell = numericCell(grid, p.row, col.col)
-        if (!cell || typeof cell.v !== 'number') continue
-        const z = cell.z && cell.z !== 'General' ? cell.z : 'General'
-        results.push({
-          seq: results.length + 1,
-          objectSeq: p.objectSeq,
-          sourceKey: col.key,
-          indicatorRaw: `${objects[p.objectSeq - 1]!.department ?? ''}: ${objects[p.objectSeq - 1]!.name}`,
-          unitSymbol: col.unit,
-          setValue: null,
-          rawValues: null,
-          avgExcel: cell.v,
-          uExcel: null,
-          ubExcel: null,
-          avgCalc: null,
-          uCalc: null,
-          numberFormat: cell.z ?? null,
-          factValue: formatFactValue(cell.v, z),
-          displayValue: cell.v,
-        })
-      }
+      for (const p of rows) pushResult(p.row, col.col, p.objectSeq, col.key, col.unit)
     }
     h = r - 1
   }
