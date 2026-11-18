@@ -3,6 +3,7 @@ import {
   adjustReference,
   buildRealProtocolXml,
   normalizeForCompare,
+  normalizeIgnoringResultOrder,
   realReferenceXml,
 } from '@/parser/fixtures/real-reference.test-utils'
 
@@ -17,6 +18,8 @@ type Case = {
   results: number
   /** поправка эталона на ответы ИЛ 16.11.2026 */
   adjust?: Parameters<typeof adjustReference>[1]
+  /** эталон с другим порядком записей (старая программа клиента непоследовательна) */
+  ignoreOrder?: boolean
   /** ручная привязка оборудования, названного в протоколе иначе, чем в справочнике */
   equipment?: Record<string, number | null>
   note?: string
@@ -36,20 +39,36 @@ const CASES: Case[] = [
     // в справочнике — «Фантом тканеэквивалентный (водный) с шкалой 250х250х150мм»
     equipment: { 'name:фантом (водный) 250 х 250 х 150 мм': 365692 },
   },
+  { name: '305-26-РК', results: 25, note: 'РК КТ' },
+  {
+    name: '324-26-РК',
+    results: 47,
+    note: 'РК Флюорограф С КАБИНОЙ, шаблонные листы с номером-заглушкой',
+    // в справочнике — «Фантом тканеэквивалентный (водный) 250х250х75мм»
+    equipment: { 'name:фантом (водный) 250 х 250 х 75 мм': 365687 },
+  },
+  {
+    name: '322-26-РК',
+    results: 54,
+    note: 'РК 2 рабочих места',
+    ignoreOrder: true,
+    equipment: { 'name:фантом (водный) 250 х 250 х 150 мм': 365692 },
+  },
   { name: '201-26-АС', results: 12, note: 'АС LITE, второй образец' },
 ]
 
 // разбор реального xlsx + bootstrap сервера — дольше 5 с при параллельном прогоне
 describe('боевые протоколы лаборатории → XML = эталон', { timeout: 60_000 }, () => {
-  it.each(CASES)('$name ($note)', async ({ name, results, adjust, equipment }) => {
+  it.each(CASES)('$name ($note)', async ({ name, results, adjust, equipment, ignoreOrder }) => {
     const built = await buildRealProtocolXml({ name, customer: 'fromReference', lab: true, equipment })
     expect(built.resultsTotal).toBe(results)
     expect(built.resultsWithOa).toBe(results)
     const reference = adjust
       ? adjustReference(realReferenceXml(name), adjust)
       : realReferenceXml(name)
-    const a = normalizeForCompare(built.xml)
-    const b = normalizeForCompare(reference)
+    const norm = ignoreOrder ? normalizeIgnoringResultOrder : normalizeForCompare
+    const a = norm(built.xml)
+    const b = norm(reference)
     let i = 0
     while (i < a.length && a[i] === b[i]) i += 1
     const at = `наш: …${a.slice(Math.max(0, i - 80), i + 120)}…

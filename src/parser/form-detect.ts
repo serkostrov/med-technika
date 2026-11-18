@@ -107,6 +107,15 @@ export function detectForm(
     return { ok: true, candidate: candidates[0]!, alternatives: candidates }
   }
 
+  // неоднозначность: на шаблонных листах бывает «живой» номер-заглушка
+  // («1-26-РК от 01.01.2026», «1-25-ЭД от 09.01.2025») — берём единственный
+  // лист с самой поздней датой протокола (эталоны 324-26-РК, 272-26-ЭД)
+  const latest = candidates.reduce((m, c) => (c.protocolDate > m ? c.protocolDate : m), '')
+  const newest = candidates.filter((c) => c.protocolDate === latest)
+  if (newest.length === 1) {
+    return { ok: true, candidate: newest[0]!, alternatives: candidates }
+  }
+
   // неоднозначность — суффикс номера
   const bySuffix = candidates.filter((c) => {
     if (!c.numberSuffix) return false

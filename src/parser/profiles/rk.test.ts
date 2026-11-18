@@ -3,7 +3,7 @@ import { createSeedBundle } from '@/data/seed'
 import { parseProtocol } from '@/parser'
 import {
   buildRealProtocolXml,
-  normalizeForCompare,
+  normalizeIgnoringResultOrder,
   realReferenceXml,
   realXlsx,
 } from '@/parser/fixtures/real-reference.test-utils'
@@ -13,7 +13,7 @@ const LE007 = '≤0,007'
 
 // разбор реального xlsx + bootstrap сервера — дольше 5 с при параллельном прогоне
 describe('26-РК стоматологический (МУК 2.6.1.3829-22) — боевой 328-26-РК', { timeout: 30_000 }, () => {
-  it('разбор: 12 видимых точек; Ḣ*(10) по всем, затем Ė пр (кроме груди/гонад/ног)', () => {
+  it('разбор: 12 видимых точек; по группам — Ḣ*(10), затем Ė пр (кроме груди/гонад/ног)', () => {
     const seed = createSeedBundle()
     const parsed = parseProtocol({
       data: realXlsx('328-26-РК'),
@@ -30,9 +30,12 @@ describe('26-РК стоматологический (МУК 2.6.1.3829-22) — 
       department: 'Помещения, смежные с процедурной рентгеновского кабинета и прилегающие территории',
     })
     expect(parsed.objects[8]).toMatchObject({ name: 'Голова' })
+    // по группам точек: смежные помещения (8), затем рабочее место (4)
     expect(parsed.results.map((r) => r.factValue)).toEqual([
-      '132,250', ...Array.from({ length: 11 }, () => LE5),
-      '0,195', ...Array.from({ length: 8 }, () => LE007),
+      '132,250', ...Array.from({ length: 7 }, () => LE5),
+      '0,195', ...Array.from({ length: 7 }, () => LE007),
+      ...Array.from({ length: 4 }, () => LE5),
+      LE007,
     ])
     expect(new Set(parsed.results.map((r) => r.unitSymbol))).toEqual(new Set(['мкЗв/ч']))
     // испытательное оборудование — в строке заголовка раздела
@@ -67,6 +70,10 @@ describe('26-РК стоматологический (МУК 2.6.1.3829-22) — 
       },
     })
     expect(built.resultsWithOa).toBe(21)
-    expect(normalizeForCompare(built.xml)).toBe(normalizeForCompare(realReferenceXml('328-26-РК')))
+    // порядок Ḣ / Ė в этом эталоне не по группам точек (старая программа клиента непоследовательна,
+    // см. 305 / 324) — записи совпадают, порядок не сверяем
+    expect(normalizeIgnoringResultOrder(built.xml)).toBe(
+      normalizeIgnoringResultOrder(realReferenceXml('328-26-РК')),
+    )
   })
 })

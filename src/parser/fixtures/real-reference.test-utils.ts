@@ -45,6 +45,23 @@ export function adjustReference(
   return out
 }
 
+/**
+ * Сравнение без учёта порядка результатов: ResearchObjectInfo сортируются.
+ * Для эталонов, где старая программа клиента ставила записи в другом порядке
+ * (26-РК 322 / 328) — сами записи должны совпасть один в один.
+ */
+export function normalizeIgnoringResultOrder(xml: string): string {
+  return normalizeForCompare(xml).replace(
+    /<ResearchObject>([\s\S]*?)<\/ResearchObject>/,
+    (_m, inner: string) => {
+      const infos = [...inner.matchAll(/<ResearchObjectInfo>[\s\S]*?<\/ResearchObjectInfo>/g)].map(
+        (x) => x[0],
+      )
+      return `<ResearchObject>${infos.sort().join('')}</ResearchObject>`
+    },
+  )
+}
+
 /** Канонизация + хвостовые пробелы текстов из ячеек Excel (FullNameObject и т.п.). */
 export function normalizeForCompare(xml: string): string {
   return canonicalizeFgisXml(xml).replace(/>([^<]*?)\s+</g, '>$1<')

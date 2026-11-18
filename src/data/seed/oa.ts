@@ -1456,4 +1456,52 @@ export const SEED_FORM_INDICATOR_MAPS: readonly FormIndicatorMap[] = [
     oaItemId: SeedIds.oaItemConcOxygen,
     ub: null,
   },
+  {
+    // 26-РК «КТ»
+    id: '44444444-4444-4444-8444-444444444580',
+    formId: '33333333-3333-4333-8333-000000000207',
+    sourceKey: 'h10',
+    oaItemId: SeedIds.oaItemRkH10,
+    ub: null,
+  },
+  {
+    // 26-РК «КТ»
+    id: '44444444-4444-4444-8444-444444444581',
+    formId: '33333333-3333-4333-8333-000000000207',
+    sourceKey: 'e_eff',
+    oaItemId: SeedIds.oaItemRkEeff,
+    ub: null,
+  },
+  {
+    // 26-РК «2 рабочих места»
+    id: '44444444-4444-4444-8444-444444444582',
+    formId: '33333333-3333-4333-8333-0000000001fe',
+    sourceKey: 'h10',
+    oaItemId: SeedIds.oaItemRkH10,
+    ub: null,
+  },
+  {
+    // 26-РК «2 рабочих места»
+    id: '44444444-4444-4444-8444-444444444583',
+    formId: '33333333-3333-4333-8333-0000000001fe',
+    sourceKey: 'e_eff',
+    oaItemId: SeedIds.oaItemRkEeff,
+    ub: null,
+  },
+  {
+    // 26-РК «Флюорограф С КАБИНОЙ»
+    id: '44444444-4444-4444-8444-444444444584',
+    formId: '33333333-3333-4333-8333-000000000203',
+    sourceKey: 'h10',
+    oaItemId: SeedIds.oaItemRkH10,
+    ub: null,
+  },
+  {
+    // 26-РК «Флюорограф С КАБИНОЙ»
+    id: '44444444-4444-4444-8444-444444444585',
+    formId: '33333333-3333-4333-8333-000000000203',
+    sourceKey: 'e_eff',
+    oaItemId: SeedIds.oaItemRkEeff,
+    ub: null,
+  },
 ]

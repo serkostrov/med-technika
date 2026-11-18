@@ -17,7 +17,7 @@ import type { ParsedObject, ParsedResult } from '../types'
  * Таблица «№ | Наименование места измерения | Направление | I уст | Результаты:
  * Ḣ*(10) | ±U | Ė пр | ДМЭД | Примечание». Строки без номера — группы точек
  * («Помещения, смежные…», «Рабочее место рентгенлаборанта…»), строка «1 2 3 …» —
- * нумерация колонок. В ФГИС — все Ḣ*(10), затем все Ė пр (эталон 328-26-РК), мкЗв/ч.
+ * нумерация колонок. В ФГИС — по группам: все Ḣ*(10), затем все Ė пр, мкЗв/ч.
  */
 
 const COL_PLACE = colIndex('C')
@@ -85,7 +85,7 @@ export function parseRk(grid: SheetGrid): {
       continue
     }
 
-    const rows: { row: number; objectSeq: number }[] = []
+    const rows: { row: number; objectSeq: number; group: string | null }[] = []
     let group: string | null = null
     let r = h + 2
     for (; r <= grid.maxRow; r++) {
@@ -105,11 +105,22 @@ export function parseRk(grid: SheetGrid): {
         .join(' ')
       const objectSeq = objects.length + 1
       objects.push({ seq: objectSeq, name: name || null, serialNo: null, year: null, department: group })
-      rows.push({ row: r, objectSeq })
+      rows.push({ row: r, objectSeq, group })
     }
 
+    // порядок во ФГИС: по группам точек (подзаголовок в A) — все Ḣ*(10), затем все Ė пр
+    // (эталоны 305-26-РК, 324-26-РК). В 322-26-РК / 328-26-РК «Рабочее место…»
+    // слито с предыдущей группой — эталоны клиента непоследовательны; для ФГИС
+    // порядок записей ResearchObjectInfo значения не имеет
+    const groups: (typeof rows)[] = []
+    for (const p of rows) {
+      const last = groups[groups.length - 1]
+      if (last && last[0]!.group === p.group) last.push(p)
+      else groups.push([p])
+    }
+    for (const groupRows of groups)
     for (const col of columns) {
-      for (const p of rows) {
+      for (const p of groupRows) {
         const fact = factText(grid, p.row, col.col)
         if (fact == null) continue
         const cell = getCell(grid, p.row, col.col)

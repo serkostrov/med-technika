@@ -570,11 +570,11 @@ INSERT INTO protocol_forms (
     '2 рабочих места',
     '2 рабочих места',
     'rk',
-    'no_materials',
-    NULL,
+    'ready',
+    8,
     'DM-55254',
     NULL,
-    '{}'::jsonb
+    '{"numberSuffix":"РК","objectFullNameFromOa":true}'::jsonb
   ),
   (
     '33333333-3333-4333-8333-0000000001ff',
@@ -635,11 +635,11 @@ INSERT INTO protocol_forms (
     'Флюорограф С КАБИНОЙ',
     'Флюорограф С КАБИНОЙ',
     'rk',
-    'no_materials',
-    NULL,
+    'ready',
+    8,
     'DM-55254',
     NULL,
-    '{}'::jsonb
+    '{"numberSuffix":"РК","objectFullNameFromOa":true}'::jsonb
   ),
   (
     '33333333-3333-4333-8333-000000000204',
@@ -687,11 +687,11 @@ INSERT INTO protocol_forms (
     'КТ',
     'КТ',
     'rk',
-    'no_materials',
-    NULL,
+    'ready',
+    8,
     'DM-55254',
     NULL,
-    '{}'::jsonb
+    '{"numberSuffix":"РК","objectFullNameFromOa":true}'::jsonb
   ),
   (
     '33333333-3333-4333-8333-000000000208',
