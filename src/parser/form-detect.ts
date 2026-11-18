@@ -40,12 +40,11 @@ export function detectForm(
   forms: readonly ProtocolForm[],
   preferredSheetName?: string | null,
 ): FormDetectionResult {
-  const readyOrKnown = forms.filter(
-    (f) =>
-      f.status === FormStatus.ready ||
-      f.status === FormStatus.in_progress ||
-      isImplementedProfile(f.parserProfile),
-  )
+  // все формы справочника: заполненный лист формы без материалов должен «перебить»
+  // шаблонные листы готовых форм с номером-заглушкой (262-26-АС: заполнен
+  // «Протокол МР 4.3.0212-20», а «(LITE)» — шаблон «1-26-АС от 10.01.2026»);
+  // разбор такой формы потом честно отказывает «нет материалов»
+  const readyOrKnown = forms
 
   const candidates: FormCandidate[] = []
 
@@ -62,10 +61,6 @@ export function detectForm(
         (f) => f.status !== FormStatus.no_materials && isImplementedProfile(f.parserProfile),
       ) ?? sameSheet[0]
     if (!form) continue
-
-    // Профили без материалов не разбираем, кроме ready
-    if (form.status === FormStatus.no_materials) continue
-    if (!isImplementedProfile(form.parserProfile)) continue
 
     const proto = extractProtocolLine(grid)
     if (!proto) continue

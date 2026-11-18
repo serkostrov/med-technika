@@ -63,11 +63,102 @@ function factText(grid: SheetGrid, r: number, c: number): string | null {
   return t.replace(/\./g, ',')
 }
 
-export function parseVent(grid: SheetGrid): {
-  objects: ParsedObject[]
-  results: ParsedResult[]
-  log: string[]
-} {
+type Parsed = { objects: ParsedObject[]; results: ParsedResult[]; log: string[] }
+
+function result(
+  grid: SheetGrid,
+  r: number,
+  c: number,
+  key: string,
+  unit: string | null,
+  objectSeq: number,
+  name: string | null,
+  seq: number,
+): ParsedResult | null {
+  const fact = factText(grid, r, c)
+  if (fact == null) return null
+  const cell = getCell(grid, r, c)
+  const num = typeof cell?.v === 'number' ? cell.v : null
+  return {
+    seq,
+    objectSeq,
+    sourceKey: key,
+    indicatorRaw: name,
+    unitSymbol: unit,
+    setValue: null,
+    rawValues: null,
+    avgExcel: num,
+    uExcel: null,
+    ubExcel: null,
+    avgCalc: null,
+    uCalc: null,
+    numberFormat: cell?.z ?? null,
+    factValue: fact,
+    displayValue: num,
+  }
+}
+
+/**
+ * Полный «Протокол МР 4.3.0212-20» (эталон 262-26-АС): «Помещение | Вентиляционная система |
+ * № точки | Скорость воздушного потока, м/с | Производительность, м3/ч (в точке / общая) |
+ * Кратность, час-1». Общая производительность и кратность — в первой точке системы.
+ * Порядок во ФГИС: производительность в точках, общая, кратность, затем скорость.
+ */
+function parseVentMr(grid: SheetGrid): Parsed | null {
+  for (let h = 0; h <= grid.maxRow; h++) {
+    if (isRowHidden(grid, h) || norm(cellText(grid, h, COL_ROOM)) !== 'помещение') continue
+    const find = (re: RegExp, row = h) => {
+      for (let c = 1; c <= HEADER_MAX_COL; c++) if (re.test(norm(cellText(grid, row, c)))) return c
+      return null
+    }
+    const speed = find(/^скорость воздушного потока/)
+    const system = find(/^вентиляционная система/)
+    const flow = find(/^производительность/)
+    const exchange = find(/^кратность/)
+    if (speed == null || system == null || flow == null) continue
+    const flowPoint = find(/^в точке/, h + 1) ?? flow
+    const flowTotal = find(/^общая/, h + 1)
+    const unitOfCol = (c: number) => unitOf(cellText(grid, h, c).replace(/\.\s*$/, ''))
+
+    const objects: ParsedObject[] = []
+    const rows: { row: number; objectSeq: number; name: string }[] = []
+    let room: string | null = null
+    for (let r = h + 2; r <= grid.maxRow; r++) {
+      const sys = normalizeText(cellText(grid, r, system))
+      const a = normalizeText(cellText(grid, r, COL_ROOM))
+      if (!sys) {
+        if (a && !a.startsWith('*')) break
+        continue
+      }
+      if (a) room = a
+      if (isRowHidden(grid, r)) continue
+      const name = [room, sys].filter(Boolean).join(': ')
+      objects.push({ seq: objects.length + 1, name, serialNo: null, year: null, department: room })
+      rows.push({ row: r, objectSeq: objects.length, name })
+    }
+
+    const results: ParsedResult[] = []
+    const push = (x: ParsedResult | null) => {
+      if (x) results.push(x)
+    }
+    const flowUnit = unitOfCol(flow)
+    for (const p of rows) push(result(grid, p.row, flowPoint, 'air_flow', flowUnit, p.objectSeq, p.name, results.length + 1))
+    if (flowTotal != null) {
+      const withTotal = rows.filter((p) => typeof getCell(grid, p.row, flowTotal)?.v === 'number')
+      for (const p of withTotal) push(result(grid, p.row, flowTotal, 'air_flow', flowUnit, p.objectSeq, p.name, results.length + 1))
+      if (exchange != null) {
+        for (const p of withTotal) push(result(grid, p.row, exchange, 'air_exchange', unitOfCol(exchange), p.objectSeq, p.name, results.length + 1))
+      }
+    }
+    for (const p of rows) push(result(grid, p.row, speed, 'air_speed', unitOfCol(speed), p.objectSeq, p.name, results.length + 1))
+    return { objects, results, log: [`vent МР: точек ${objects.length}, результатов ${results.length}`] }
+  }
+  return null
+}
+
+export function parseVent(grid: SheetGrid): Parsed {
+  const mr = parseVentMr(grid)
+  if (mr) return mr
   const log: string[] = []
   const objects: ParsedObject[] = []
   const results: ParsedResult[] = []

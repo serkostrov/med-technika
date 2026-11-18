@@ -1,10 +1,14 @@
 import { describe, expect, it } from 'vitest'
+import { FormStatus } from '@/domain'
+import { createSeedBundle } from '@/data/seed'
+import { parseProtocol, ParseError } from '@/parser'
 import {
   adjustReference,
   buildRealProtocolXml,
   normalizeForCompare,
   normalizeIgnoringResultOrder,
   realReferenceXml,
+  realXlsx,
 } from '@/parser/fixtures/real-reference.test-utils'
 
 /**
@@ -54,6 +58,7 @@ const CASES: Case[] = [
     ignoreOrder: true,
     equipment: { 'name:фантом (водный) 250 х 250 х 150 мм': 365692 },
   },
+  { name: '262-26-АС', results: 12, note: 'АС МР 4.3.0212-20 (полная таблица)' },
   { name: '201-26-АС', results: 12, note: 'АС LITE, второй образец' },
 ]
 
@@ -74,5 +79,23 @@ describe('боевые протоколы лаборатории → XML = эт�
     const at = `наш: …${a.slice(Math.max(0, i - 80), i + 120)}…
 эталон: …${b.slice(Math.max(0, i - 80), i + 120)}…`
     expect(a === b, at).toBe(true)
+  })
+})
+
+describe('определение формы среди шаблонных листов', () => {
+  it('заполнен лист формы без материалов — честный отказ, а не разбор шаблонного листа готовой формы', () => {
+    // 262-26-АС: «Протокол МР 4.3.0212-20» от 16.11.2026, «(LITE)» — шаблон «1-26-АС от 10.01.2026»
+    const seed = createSeedBundle()
+    const forms = seed.protocolForms.map((f) =>
+      f.sheetName === 'Протокол МР 4.3.0212-20' ? { ...f, status: FormStatus.no_materials } : f,
+    )
+    let error: unknown = null
+    try {
+      parseProtocol({ data: realXlsx('262-26-АС'), forms, indicatorMaps: seed.formIndicatorMaps })
+    } catch (e) {
+      error = e
+    }
+    expect(error).toBeInstanceOf(ParseError)
+    expect((error as ParseError).code).toBe('NO_MATERIALS')
   })
 })

@@ -1066,6 +1066,27 @@ export const SEED_OA_ITEMS: readonly OaItem[] = [
     objectName: 'Концентраторы кислорода',
     deletedAt: null,
   },
+  {
+    // 26-АС: ОА п.3.7 — эталон 262-26-АС
+    id: SeedIds.oaItemVentSpeed,
+    editionId: SeedIds.oaEditionCurrent,
+    itemNo: '3.7.',
+    methodikText: 'МР 4.3.0212-20, п.3.2-3.3',
+    methodikFgisId: null,
+    methodText: 'Аэродинамические исследования (испытания); методы аэродинамических исследований (испытаний) без уточнения',
+    methodFgisId: 1001,
+    objectType: 'Окружающая среда',
+    indicatorText: 'Скорость воздушного потока',
+    indicatorFgisId: '1626',
+    unitText: 'м/с',
+    unitFgisId: '90',
+    rangeText: '0,2 - 5,0',
+    rangeMin: 0.2,
+    rangeMax: 5,
+    isCalculated: false,
+    objectName: 'Вентиляционные системы',
+    deletedAt: null,
+  },
 ]
 
 /** Эталонные сопоставления ТЗ §7.4 + uB из §6.5 где указаны. */
@@ -1502,6 +1523,27 @@ export const SEED_FORM_INDICATOR_MAPS: readonly FormIndicatorMap[] = [
     formId: '33333333-3333-4333-8333-000000000203',
     sourceKey: 'e_eff',
     oaItemId: SeedIds.oaItemRkEeff,
+    ub: null,
+  },
+  {
+    id: '44444444-4444-4444-8444-444444444590',
+    formId: SeedIds.formVentMr,
+    sourceKey: 'air_flow',
+    oaItemId: SeedIds.oaItemVentFlow,
+    ub: null,
+  },
+  {
+    id: '44444444-4444-4444-8444-444444444591',
+    formId: SeedIds.formVentMr,
+    sourceKey: 'air_exchange',
+    oaItemId: SeedIds.oaItemVentExchange,
+    ub: null,
+  },
+  {
+    id: '44444444-4444-4444-8444-444444444592',
+    formId: SeedIds.formVentMr,
+    sourceKey: 'air_speed',
+    oaItemId: SeedIds.oaItemVentSpeed,
     ub: null,
   },
 ]

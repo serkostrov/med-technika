@@ -791,11 +791,11 @@ INSERT INTO protocol_forms (
     'Протокол МР 4.3.0212-20',
     'Протокол МР 4.3.0212-20',
     'vent',
-    'no_materials',
-    NULL,
+    'ready',
+    8,
     'DM-55254',
     NULL,
-    '{}'::jsonb
+    '{"numberSuffix":"АС"}'::jsonb
   ),
   (
     '33333333-3333-4333-8333-000000000334',
