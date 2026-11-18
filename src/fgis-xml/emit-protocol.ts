@@ -175,7 +175,7 @@ function emitResearch(result: ProtocolResult, ctx: ProtocolXmlContext): string {
     // единицы в протоколе нет — текстовая единица позиции ОА
     // («наличие/отсутствие», «указание не требуется» — эталон 426-26-ЭП)
     !result.unitSymbol && oa && isTextOnlyOaUnit(oa.unitText, oa.unitFgisId)
-      ? el('UniqueMeasurement', oa.unitText.trim())
+      ? el('UniqueMeasurement', (oa.unitText ?? '').trim())
       : '',
     el('DocNameId', docNameId),
     el('UniqueMethod', uniqueMethod),
