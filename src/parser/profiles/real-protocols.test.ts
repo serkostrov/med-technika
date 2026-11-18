@@ -82,6 +82,7 @@ const CASES: Case[] = [
     compareFirst: 100,
     adjust: { removeResultAt: 7 },
   },
+  { name: '25-26-ПП', results: 6, note: 'ПП МУК 4.3.2491-09' },
   { name: '412-26-ЭП', results: 38, note: 'ЭП 2 р.м плёнка и цифра' },
   { name: '419-26-ЭП', results: 36, note: 'ЭП КТ периодич (точность установки U во ФГИС не выгружалась)' },
   { name: '385-26-ЭП', results: 35, note: 'ЭП Телеуправляемый УРИ+цифра' },

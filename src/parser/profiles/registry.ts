@@ -9,6 +9,7 @@ import { parseMicro } from './micro'
 import { parseVent } from './vent'
 import { parseSz } from './sz'
 import { parseXray } from './xray'
+import { parseEmfPf } from './emf-pf'
 import { parseRk } from './rk'
 import { parseDose } from './dose'
 import { parseIvl } from './ivl'
@@ -31,6 +32,7 @@ const PROFILES: Record<KnownParserProfile, ProfileRunner> = {
   'physio-df': parsePhysioDf,
   noise: (grid) => parseNoise(grid),
   emf: (grid) => parseEmf(grid),
+  'emf-pf': (grid) => parseEmfPf(grid),
   light: (grid) => parseLight(grid),
   micro: (grid) => parseMicro(grid),
   vent: (grid) => parseVent(grid),

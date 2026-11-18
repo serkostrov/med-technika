@@ -293,7 +293,14 @@ export const SEED_PROTOCOL_FORMS: readonly ProtocolForm[] = [
     conditionsLimits: null,
     settings: { numberSuffix: 'О' },
   },
-  ...formBatch(11, 'шаблон-26-ПП', 'emf', ['МУК 4.3.2491-09']),
+  ...formBatch(11, 'шаблон-26-ПП', 'emf-pf', ['МУК 4.3.2491-09']).map((f) => ({
+    ...f,
+    // эталон 25-26-ПП: рабочие места, Directory DM-53535
+    status: FormStatus.ready,
+    typeObjectId: 10,
+    fgisDirectory: 'DM-53535',
+    settings: { numberSuffix: 'ПП' },
+  })),
   ...formBatch(12, 'шаблон-26-ПЧ', 'emf', ['БВЕК.431440.08.04 РЭ']),
   {
     id: SeedIds.formEmfPch,

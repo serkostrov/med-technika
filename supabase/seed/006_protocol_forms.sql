@@ -894,12 +894,12 @@ INSERT INTO protocol_forms (
     'шаблон-26-ПП',
     'МУК 4.3.2491-09',
     'МУК 4.3.2491-09',
-    'emf',
-    'no_materials',
+    'emf-pf',
+    'ready',
+    10,
+    'DM-53535',
     NULL,
-    'DM-55254',
-    NULL,
-    '{}'::jsonb
+    '{"numberSuffix":"ПП"}'::jsonb
   ),
   (
     '33333333-3333-4333-8333-0000000004ba',

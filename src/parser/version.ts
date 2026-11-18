@@ -1,11 +1,12 @@
 /** Глобальная версия парсера. Любое изменение логики повышает версию (ТЗ §6.7). */
-export const PARSER_VERSION = '1.13.0'
+export const PARSER_VERSION = '1.14.0'
 
 export const PROFILE_VERSIONS = {
   'physio-bb': '1.0.0',
   'physio-df': '1.0.2',
   noise: '1.0.0',
   emf: '1.0.0',
+  'emf-pf': '1.0.0',
   light: '1.0.0',
   micro: '1.0.0',
   vent: '1.0.0',
