@@ -129,7 +129,17 @@ export const SEED_PROTOCOL_FORMS: readonly ProtocolForm[] = [
     conditionsLimits: null,
     settings: { numberSuffix: 'ЭП', objectFullNameFromOa: true, textIndicatorDirectory: '' },
   },
-  ...formBatch(3, 'шаблон-26-ЭП КТ', 'xray-ct', ['КТ периодич', 'КТ приёмка']),
+  ...formBatch(3, 'шаблон-26-ЭП КТ', 'xray-ct', ['КТ периодич', 'КТ приёмка']).map((f) =>
+    // эталон 419-26-ЭП
+    f.sheetName === 'КТ периодич'
+      ? {
+          ...f,
+          status: FormStatus.ready,
+          typeObjectId: 1,
+          settings: { numberSuffix: 'ЭП', objectFullNameFromOa: true, textIndicatorDirectory: '' },
+        }
+      : f,
+  ),
   // 26-ЭД обычный (Прил. Б); «Дети_» — приложение (ИЛ 16.11.2026), не форма
   ...formBatch(4, 'шаблон-26-ЭД обычный', 'dose', [
     'новый рентген аппараты и флюхи',

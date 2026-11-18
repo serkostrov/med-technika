@@ -150,7 +150,15 @@ function underHeader(key: string, header: string): Parse {
 function registration(key: string): Parse {
   return (g, from, to, emit) => {
     const at = findCell(g, from, to, 'регистрация') ?? findCell(g, from, to, 'пороговый контраст')
-    if (!at) return
+    if (!at) {
+      // КТ (419-26-ЭП): «Результаты определения», ниже — число в A и единица правее
+      const res = findRow(g, from, to, 'результат', 0)
+      if (res == null || typeof getCell(g, res + 1, 0)?.v !== 'number') return
+      let unit: string | null = null
+      for (let c = 1; c < COL_LIMIT && !unit; c++) unit = normalizeText(cellText(g, res + 1, c)) || null
+      emit(key, res + 1, 0, unit)
+      return
+    }
     const [r, c] = at
     const unit = unitAfterComma(cellText(g, r, c))
     const inRow = valueCols(g, r, c + 1, true)[0]
@@ -178,6 +186,29 @@ function nextRowResult(key: string): Parse {
   }
 }
 
+/** Под каждой меткой (A начинается с label) — число в A следующей строки (КТ: шум, CTDIvol, DLP). */
+/** unit: 'label' — после запятой в подписи; null — без единицы (DLP: «указание не требуется»). */
+function belowLabels(key: string, label: string, unit: string | null | 'label' = 'label'): Parse {
+  return (g, from, to, emit) => {
+    for (let r = from; r < to; r++) {
+      if (isRowHidden(g, r) || !norm(cellText(g, r, 0)).startsWith(label)) continue
+      if (typeof getCell(g, r + 1, 0)?.v === 'number') {
+        emit(key, r + 1, 0, unit === 'label' ? unitAfterComma(cellText(g, r, 0)) : unit)
+      }
+    }
+  }
+}
+
+/** Строки с меткой в A — все числа строки правее (КТ: однородность по 5 областям). */
+function labelRows(key: string, label: string, unit: string | null): Parse {
+  return (g, from, to, emit) => {
+    for (let r = from; r <= to; r++) {
+      if (isRowHidden(g, r) || !norm(cellText(g, r, 0)).startsWith(label)) continue
+      for (const c of valueCols(g, r, 1, true)) emit(key, r, c, unit)
+    }
+  }
+}
+
 const SECTIONS: { title: string; parse: Parse }[] = [
   {
     // одна или несколько сигнализаций (световая / звуковая) — все «наличие / отсутствие»
@@ -198,6 +229,16 @@ const SECTIONS: { title: string; parse: Parse }[] = [
       }
     },
   },
+  {
+    // КТ (419-26-ЭП): «Результат определения: наличие»
+    title: 'индикация состояния нагрузки',
+    parse: (g, from, to, emit) => {
+      const r = findRow(g, from, to, 'результат определения', 0)
+      if (r == null) return
+      const c = valueCols(g, r, 1)[0]
+      if (c != null) emit('load_indication', r, c, null)
+    },
+  },
   { title: 'фильтрация рентгеновского излучения', parse: underHeader('total_filtration', 'общая') },
   {
     title: 'слой половинного ослабления',
@@ -208,6 +249,14 @@ const SECTIONS: { title: string; parse: Parse }[] = [
           emit('hvl', r + 1, col, unitAfterComma(cellText(g, r, col)))
           return
         }
+      }
+      // КТ: таблица «U, кВ | Слой половинного ослабления, мм Al» — по строке на напряжение
+      const at = findCell(g, from, to, 'слой половинного ослабления,')
+      if (!at) return
+      const [hr, hc] = at
+      const unit = unitAfterComma(cellText(g, hr, hc))
+      for (let r = hr + 1; r <= to && typeof getCell(g, r, hc)?.v === 'number'; r++) {
+        if (!isRowHidden(g, r)) emit('hvl', r, hc, unit)
       }
     },
   },
@@ -346,13 +395,47 @@ const SECTIONS: { title: string; parse: Parse }[] = [
   { title: 'высококонтрастная разрешающая', parse: nextRowResult('high_contrast_resolution') },
   { title: 'контрастная чувствительность', parse: nextRowResult('contrast_sensitivity') },
   { title: 'низкоконтрастное разрешение', parse: registration('low_contrast') },
+  // ── КТ (419-26-ЭП «КТ периодич») ──
+  // точность установки U у КТ во ФГИС не выгружалась (эталон 419-26-ЭП)
+  { title: 'точность установки анодного напряжения', parse: () => {} },
+  { title: 'шум', parse: belowLabels('ct_noise', 'среднее квадратическое отклонение', 'HU') },
+  { title: 'среднее число кт-единиц', parse: belowLabels('ct_mean', 'среднее число кт-единиц', 'HU') },
+  { title: 'однородность', parse: labelRows('ct_uniformity', 'определяемые значения', 'HU') },
+  {
+    title: 'томографическая толщина слоя',
+    parse: (g, from, to, emit) => {
+      for (let r = from; r <= to; r++) {
+        if (isRowHidden(g, r) || !/^(верхняя|нижняя)$/.test(norm(cellText(g, r, 0)))) continue
+        const c = valueCols(g, r, 1, true)[0]
+        if (c != null) emit('ct_slice_thickness', r, c, 'мм')
+      }
+    },
+  },
+  { title: 'объемный компьютерно-томографический индекс', parse: belowLabels('ctdi_vol', 'результаты определения') },
+  { title: 'произведение дозы на длину сканирования', parse: belowLabels('dlp', 'результаты определения', null) },
+  {
+    // продольное позиционирование: колонки «Продольное направлени… Lвперёд / Lназад, мм»
+    title: 'позиционирование стола пациента',
+    parse: (g, from, to, emit) => {
+      const head = findCell(g, from, to, 'установленное расстояние')
+      if (!head) return
+      const [hr] = head
+      const cols: number[] = []
+      for (let c = 1; c < COL_LIMIT; c++) if (norm(cellText(g, hr, c)).startsWith('продольное')) cols.push(c)
+      for (let r = hr + 1; r <= to; r++) {
+        if (isRowHidden(g, r)) continue
+        for (const c of cols) if (typeof getCell(g, r, c)?.v === 'number') emit('table_positioning', r, c, 'мм')
+      }
+    },
+  },
 ]
 
 function sectionAt(g: SheetGrid, r: number) {
   const a = norm(cellText(g, r, 0))
   if (!a) return null
   // «Слой половинного ослабления, мм Al» — заголовок колонки, не раздела (маммограф)
-  if (/^[^,(]+,\s*(мм|кв|мгр|%|с(?![а-яё]))/.test(a)) return null
+  // КТ: «среднее число КТ-единиц в центральной области…, Нu» — подпись результата
+  if (/^[^,(]+,\s*(мм|кв|мгр|%|с(?![а-яё])|[нh]u)/.test(a)) return null
   return SECTIONS.find((s) => a.startsWith(s.title)) ?? null
 }
 

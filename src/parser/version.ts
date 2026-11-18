@@ -1,5 +1,5 @@
 /** Глобальная версия парсера. Любое изменение логики повышает версию (ТЗ §6.7). */
-export const PARSER_VERSION = '1.11.0'
+export const PARSER_VERSION = '1.12.0'
 
 export const PROFILE_VERSIONS = {
   'physio-bb': '1.0.0',
@@ -10,7 +10,8 @@ export const PROFILE_VERSIONS = {
   micro: '1.0.0',
   vent: '1.0.0',
   sz: '1.0.0',
-  xray: '2.0.0',
+  xray: '2.1.0',
+  'xray-ct': '1.0.0',
   rk: '1.0.0',
   dose: '1.0.0',
   ivl: '1.0.0',

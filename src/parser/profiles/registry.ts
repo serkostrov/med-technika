@@ -36,6 +36,7 @@ const PROFILES: Record<KnownParserProfile, ProfileRunner> = {
   vent: (grid) => parseVent(grid),
   sz: (grid) => parseSz(grid),
   xray: (grid) => parseXray(grid),
+  'xray-ct': (grid) => parseXray(grid),
   rk: (grid) => parseRk(grid),
   dose: (grid) => parseDose(grid),
   ivl: (grid) => parseIvl(grid),
