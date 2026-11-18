@@ -1,5 +1,6 @@
 import type { Database } from '@/server/db/database'
 import { syncSeedReferenceData } from '@/data/seed/sync'
+import { rerunChecksForActiveProtocols } from '@/validation'
 
 export type DatabaseSnapshot = {
   version: 1
@@ -188,4 +189,7 @@ export function importDatabaseSnapshot(
   for (const f of snap.blobs.fgisExportFiles) {
     db.fgisExportFiles.set(f.path, { ...f })
   }
+  // после обновления сервера правила проверок могли измениться (ложные E15 у 427-26-ЭП) —
+  // перепроверяем протоколы до выгрузки; неизменные замечания не трогаются
+  rerunChecksForActiveProtocols(db)
 }

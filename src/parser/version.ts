@@ -19,3 +19,9 @@ export const PROFILE_VERSIONS = {
 } as const
 
 export type KnownParserProfile = keyof typeof PROFILE_VERSIONS
+
+/** «1.14.0/2.1.0» — как protocol.parserVersion; null, если профиль не реализован. */
+export function currentParserVersion(profile: string): string | null {
+  const v = (PROFILE_VERSIONS as Record<string, string>)[profile]
+  return v ? `${PARSER_VERSION}/${v}` : null
+}

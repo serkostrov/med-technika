@@ -132,6 +132,8 @@ export function auditActionLabel(
       case 'replace_soft_delete':
       case 'replace':
         return 'Заменил'
+      case 'reparse':
+        return 'Разобрал заново'
       case 'update':
       case 'set_oa':
       case 'set_include':

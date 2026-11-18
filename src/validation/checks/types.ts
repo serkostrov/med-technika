@@ -87,6 +87,16 @@ export function applyFindings(
     ]),
   )
 
+  // тот же набор замечаний — ничего не меняем (перепроверка при старте сервера не плодит строки)
+  const unchanged =
+    prevActive.length === findings.length &&
+    new Set(findings.map((f) => findingFingerprint(f.code, f.message, f.ref))).size === findings.length &&
+    findings.every((f) => {
+      const prev = prevByFp.get(findingFingerprint(f.code, f.message, f.ref))
+      return prev != null && prev.severity === resolveSeverity(db, f.code, f.defaultSeverity)
+    })
+  if (unchanged) return prevActive
+
   for (const issue of prevActive) {
     issue.isActive = false
   }

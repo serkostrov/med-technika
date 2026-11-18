@@ -149,6 +149,11 @@ export async function handleApiRequest(
       )
     }
 
+    if (method === 'POST' && path === '/rpc/protocol_reparse') {
+      const body = await readJson(request)
+      return json(200, api.reparseProtocol(ctx, String(body.protocolId)))
+    }
+
     if (method === 'POST' && path === '/rpc/protocol_run_checks') {
       const body = await readJson(request)
       return json(200, api.runProtocolChecks(ctx, String(body.protocolId)))

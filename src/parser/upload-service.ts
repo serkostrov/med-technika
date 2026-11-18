@@ -368,6 +368,85 @@ export class ProtocolUploadService {
     return { ...protocol }
   }
 
+  /**
+   * «Разобрать заново»: сохранённый исходный Excel — текущей версией парсера, тот же лист.
+   * Как замена (ТЗ 6.7): старый протокол помечается удалённым, новый — на проверку.
+   * Переносится то, чего нет в Excel или что правили руками (ТЗ 6.8): дата заявки, признак
+   * расширения ОА, территория, скан, заказчик, исполнитель, привязки СИ, исключения из XML,
+   * поля шапки, изменённые в карточке. Привязки ОА — в обучаемом сопоставлении формы.
+   */
+  reparseProtocol(ctx: AuthContext, protocolId: string): Protocol {
+    authorize(ctx, SecuredOperation.protocolSave)
+    const old = this.db.protocols.find((p) => p.id === protocolId && p.deletedAt === null)
+    if (!old) throw new DomainError('Протокол не найден', 'NOT_FOUND')
+    if (old.status === ProtocolStatus.exported || old.status === ProtocolStatus.sent) {
+      throw new DomainError('Повторный разбор запрещён после выгрузки (ФЛК 5)', 'REPLACE_FORBIDDEN')
+    }
+    const source = this.sources.get(old.sourcePath)
+    if (!source) throw new DomainError('Исходный файл не найден в хранилище', 'SOURCE_MISSING')
+
+    const before = old.raw as unknown as Partial<ParsedProtocol>
+    const parsed = parseProtocol({
+      data: source.bytes.slice(0),
+      forms: this.db.protocolForms,
+      indicatorMaps: this.db.formIndicatorMaps,
+      recalcTolerance: Number(
+        this.db.settings.find((s) => s.key === 'recalc_tolerance')?.value ?? 1e-6,
+      ),
+      preferredSheetName: before.sheetName ?? null,
+    })
+
+    const oldResults = this.db.protocolResults.filter((r) => r.protocolId === old.id)
+    const oldEquipment = this.db.protocolEquipment.filter((e) => e.protocolId === old.id)
+
+    const next = this.saveParsed(ctx, {
+      sourcePath: old.sourcePath,
+      sha256: old.sourceSha256,
+      parsed,
+      replaceProtocolId: old.id,
+      customerId: old.customerId,
+    })
+    const protocol = this.db.protocols.find((p) => p.id === next.id)!
+
+    protocol.applicationDate = old.applicationDate
+    protocol.accredScope353 = old.accredScope353
+    protocol.territoryFeature = old.territoryFeature
+    protocol.scanPath = old.scanPath
+    protocol.engineerStaffId = old.engineerStaffId ?? protocol.engineerStaffId
+    // поля шапки: только если их меняли в карточке (иначе — новый разбор)
+    const meta = before.metadata
+    const edited = <K extends keyof Protocol>(key: K, parsedValue: unknown) =>
+      meta && old[key] !== parsedValue
+    if (edited('measureStart', meta?.measureStart)) protocol.measureStart = old.measureStart
+    if (edited('measureEnd', meta?.measureEnd)) protocol.measureEnd = old.measureEnd
+    if (edited('measurePlace', meta?.measurePlace)) protocol.measurePlace = old.measurePlace
+    if (edited('measureAddress', meta?.measureAddress)) protocol.measureAddress = old.measureAddress
+    if (edited('customerPhone', meta?.customerPhone)) protocol.customerPhone = old.customerPhone
+
+    // исключения из XML — по тому же показателю и значению
+    for (const r of this.db.protocolResults.filter((x) => x.protocolId === protocol.id)) {
+      const prev = oldResults.find(
+        (o) => o.seq === r.seq && o.sourceKey === r.sourceKey && o.factValue === r.factValue,
+      )
+      if (!prev) continue
+      if (!prev.includeInXml) r.includeInXml = false
+      if (!r.oaItemId && prev.oaItemId) r.oaItemId = prev.oaItemId
+    }
+    // ручные привязки СИ — по тексту строки
+    for (const e of this.db.protocolEquipment.filter((x) => x.protocolId === protocol.id)) {
+      const prev = oldEquipment.find((o) => o.rawText === e.rawText && o.equipmentId)
+      if (prev && prev.equipmentId !== e.equipmentId) e.equipmentId = prev.equipmentId
+    }
+
+    protocolRunChecks(this.db, protocol.id)
+    this.audit(ctx.staffId, 'protocols', protocol.id, 'reparse', {
+      replacedProtocolId: old.id,
+      fromVersion: old.parserVersion,
+      toVersion: protocol.parserVersion,
+    })
+    return { ...protocol }
+  }
+
   private buildMatchingHints(parsed: ParsedProtocol) {
     const customer = matchCustomerByName(
       this.db.customers,

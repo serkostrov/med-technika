@@ -335,6 +335,15 @@ export class SecureApi {
     return this.uploads.saveParsed(ctx, input)
   }
 
+  /** «Разобрать заново» — сохранённый Excel текущей версией парсера (замена, ТЗ 6.7). */
+  reparseProtocol(ctx: AuthContext, protocolId: string): Protocol {
+    return this.locks.withLock([protocolId], () => {
+      const protocol = this.requireProtocol(protocolId)
+      authorize(ctx, SecuredOperation.protocolUpdate, { protocol })
+      return this.uploads.reparseProtocol(ctx, protocolId)
+    })
+  }
+
   /** RPC protocol_run_checks — полный набор E/W (ТЗ §8). */
   runProtocolChecks(ctx: AuthContext, protocolId: string): ProtocolIssue[] {
     const protocol = this.requireProtocol(protocolId)

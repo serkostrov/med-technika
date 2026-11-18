@@ -3,6 +3,7 @@ import type { Database } from '@/server/db/database'
 import type { ProtocolCardDetail, ProtocolResultView } from './card-types'
 import { buildProtocolXmlPreview } from '@/fgis-xml'
 import { auditActionLabel, enrichAuditDiff } from './audit-query'
+import { currentParserVersion } from '@/parser/version'
 
 export function buildProtocolCardDetail(
   db: Database,
@@ -119,8 +120,20 @@ export function buildProtocolCardDetail(
     ? db.protocolScans.get(protocol.scanPath)
     : undefined
 
+  const currentVersion = form ? currentParserVersion(form.parserProfile) : null
+  const parser = {
+    protocolVersion: protocol.parserVersion,
+    currentVersion,
+    outdated: Boolean(currentVersion && protocol.parserVersion !== currentVersion),
+    canReparse:
+      db.protocolSources.has(protocol.sourcePath) &&
+      protocol.status !== 'exported' &&
+      protocol.status !== 'sent',
+  }
+
   return {
     protocol: { ...protocol },
+    parser,
     form: form ? { ...form } : null,
     canEditMeasureDates,
     customer: customer ? { ...customer } : null,

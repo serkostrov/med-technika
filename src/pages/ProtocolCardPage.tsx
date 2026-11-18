@@ -21,6 +21,7 @@ import {
   detachScanPdf,
   fetchProtocolDetail,
   fetchScanPdfBlob,
+  reparseProtocolCard,
   returnProtocolCard,
   setProtocolEquipment,
   setResultInclude,
@@ -118,6 +119,7 @@ export function ProtocolCardPage() {
   const [returnReason, setReturnReason] = useState('')
   const [showReturn, setShowReturn] = useState(false)
   const [showDelete, setShowDelete] = useState(false)
+  const [showReparse, setShowReparse] = useState(false)
   /** Общий комментарий «к сведению» — на уровне страницы. */
   const [ackComment, setAckComment] = useState('')
 
@@ -224,6 +226,21 @@ export function ProtocolCardPage() {
                 {detail.form.title}
               </>
             ) : null}
+            {detail.parser.protocolVersion ? (
+              <>
+                <MetaSep />
+                <span
+                  title={
+                    detail.parser.outdated
+                      ? `Парсер обновился (текущая версия ${detail.parser.currentVersion}). «Разобрать заново» применит исправления разбора.`
+                      : 'Разобран текущей версией парсера'
+                  }
+                >
+                  парсер {detail.parser.protocolVersion}
+                  {detail.parser.outdated ? ' — есть новее' : ''}
+                </span>
+              </>
+            ) : null}
           </p>
         </div>
         <div className="protocol-card__actions">
@@ -234,6 +251,17 @@ export function ProtocolCardPage() {
           >
             Предпросмотр
           </button>
+          {detail.parser.canReparse && canEdit ? (
+            <button
+              type="button"
+              className={detail.parser.outdated ? 'btn' : 'btn btn--ghost'}
+              disabled={busy}
+              title="Разобрать сохранённый Excel текущей версией парсера"
+              onClick={() => setShowReparse(true)}
+            >
+              Разобрать заново
+            </button>
+          ) : null}
           {canDelete ? (
             <button
               type="button"
@@ -276,6 +304,57 @@ export function ProtocolCardPage() {
             )}
         </div>
       </div>
+
+      <ModalDialog
+        title="Разобрать протокол заново?"
+        open={showReparse}
+        busy={busy}
+        onClose={() => setShowReparse(false)}
+        footer={
+          <>
+            <button
+              type="button"
+              className="btn"
+              disabled={busy}
+              onClick={() => setShowReparse(false)}
+            >
+              Отмена
+            </button>
+            <button
+              type="button"
+              className="btn btn--primary"
+              disabled={busy}
+              onClick={() => {
+                void (async () => {
+                  setBusy(true)
+                  try {
+                    const next = await reparseProtocolCard(protocolId)
+                    notify(`Протокол ${protocol.number} разобран заново`, 'success')
+                    setShowReparse(false)
+                    navigate(`/protocols/${next.id}`)
+                  } catch (err) {
+                    notify(err instanceof Error ? err.message : 'Ошибка разбора', 'error')
+                  } finally {
+                    setBusy(false)
+                  }
+                })()
+              }}
+            >
+              Разобрать заново
+            </button>
+          </>
+        }
+      >
+        <p style={{ margin: 0 }}>
+          Сохранённый Excel протокола <strong>{protocol.number}</strong> будет разобран
+          текущей версией парсера{detail.parser.currentVersion ? ` (${detail.parser.currentVersion})` : ''}.
+        </p>
+        <p className="muted small" style={{ margin: '0.35rem 0 0' }}>
+          Сохранятся дата заявки, скан, заказчик, исполнитель, привязки СИ и ОА, исключения из
+          XML и поля, изменённые в карточке. Протокол вернётся на проверку; принятые замечания
+          нужно будет принять снова, если они изменились.
+        </p>
+      </ModalDialog>
 
       <ModalDialog
         title="Удалить протокол?"

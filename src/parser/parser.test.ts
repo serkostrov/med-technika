@@ -412,4 +412,57 @@ describe('Загрузка: SHA-256 и save', () => {
       api.listProtocolEntities(ctx).some((p) => p.id === saved.id),
     ).toBe(false)
   })
+
+  it('«Разобрать заново»: тот же файл текущим парсером, ручные правки сохраняются', async () => {
+    const { api } = await bootstrapServer()
+    const login = await api.login(SeedCredentials.head.email, SeedCredentials.head.password)
+    const ctx = api.auth.resolveToken(login.token)
+    const up = await api.uploads.parseUpload(ctx, '44.xlsx', buildReferenceMtXlsx())
+    const saved = api.uploads.saveParsed(ctx, {
+      sourcePath: up.sourcePath,
+      sha256: up.sha256,
+      parsed: up.parsed!,
+      createCustomer: true,
+    })
+    api.updateProtocol(ctx, saved.id, { applicationDate: '2026-11-01', measureAddress: 'адрес вручную' })
+    const before = api.getProtocolDetail(ctx, saved.id)
+    const excluded = before.results[0]!
+    api.setResultInclude(ctx, excluded.id, false, 'не выгружать')
+    // протокол «разобран старой версией»
+    api.uploads['db'].protocols.find((p) => p.id === saved.id)!.parserVersion = '0.0.1/0.0.1'
+    expect(api.getProtocolDetail(ctx, saved.id).parser).toMatchObject({ outdated: true, canReparse: true })
+
+    const next = api.reparseProtocol(ctx, saved.id)
+    expect(next.id).not.toBe(saved.id)
+    expect(api.listProtocolEntities(ctx).some((p) => p.id === saved.id)).toBe(false)
+    const after = api.getProtocolDetail(ctx, next.id)
+    expect(after.parser.outdated).toBe(false)
+    expect(after.protocol.applicationDate).toBe('2026-11-01')
+    expect(after.protocol.measureAddress).toBe('адрес вручную')
+    expect(after.protocol.customerId).toBe(before.protocol.customerId)
+    expect(after.results).toHaveLength(before.results.length)
+    expect(
+      after.results.find((r) => r.seq === excluded.seq && r.sourceKey === excluded.sourceKey)?.includeInXml,
+    ).toBe(false)
+    expect(after.audit.some((a) => a.action === 'reparse')).toBe(true)
+  })
+
+  it('перепроверка без изменений не плодит замечания (перезапуск при старте сервера)', async () => {
+    const { api } = await bootstrapServer()
+    const login = await api.login(SeedCredentials.head.email, SeedCredentials.head.password)
+    const ctx = api.auth.resolveToken(login.token)
+    const up = await api.uploads.parseUpload(ctx, '44.xlsx', buildReferenceMtXlsx())
+    const saved = api.uploads.saveParsed(ctx, {
+      sourcePath: up.sourcePath,
+      sha256: up.sha256,
+      parsed: up.parsed!,
+      createCustomer: true,
+    })
+    const db = api.uploads['db']
+    const count = () => db.protocolIssues.filter((i) => i.protocolId === saved.id).length
+    const n = count()
+    api.runProtocolChecks(ctx, saved.id)
+    api.runProtocolChecks(ctx, saved.id)
+    expect(count()).toBe(n)
+  })
 })

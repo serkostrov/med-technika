@@ -597,7 +597,8 @@ describe('Жизненный цикл замечаний и overrides', () => {
     const again = db.protocolIssues.find(
       (i) => i.protocolId === p.id && i.isActive && i.code === 'W01',
     )
-    expect(again?.id).not.toBe(first!.id)
+    // набор замечаний не изменился — строка та же (перепроверка при старте не плодит дубли)
+    expect(again?.id).toBe(first!.id)
     expect(again?.acknowledgedAt).toBe('2026-09-22T12:00:00.000Z')
     expect(again?.ackComment).toBe('ок')
     expect(again?.acknowledgedBy).toBe(SeedIds.staffSadakov)

@@ -34,6 +34,14 @@ export async function returnProtocolCard(protocolId: string, reason: string) {
   })
 }
 
+/** «Разобрать заново» — новый протокол (старый помечен удалённым), вернёт его id. */
+export async function reparseProtocolCard(protocolId: string) {
+  return apiFetchJson<{ id: string; number: string }>(`/rpc/protocol_reparse`, {
+    method: 'POST',
+    body: JSON.stringify({ protocolId }),
+  })
+}
+
 export async function deleteProtocolCard(protocolId: string) {
   return apiFetchJson<{ ok: boolean }>(`/rpc/protocol_delete`, {
     method: 'POST',

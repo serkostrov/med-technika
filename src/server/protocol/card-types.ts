@@ -72,6 +72,13 @@ export type ProtocolCardDetail = {
     warningCount: number
     unackedWarningCount: number
   }
+  /** версия парсера: каким разобран протокол и текущая (кнопка «Разобрать заново») */
+  parser: {
+    protocolVersion: string | null
+    currentVersion: string | null
+    outdated: boolean
+    canReparse: boolean
+  }
   scan: {
     path: string | null
     fileName: string | null
