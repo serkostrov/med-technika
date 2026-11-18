@@ -7,7 +7,7 @@ import {
   type Protocol,
 } from '@/domain'
 import type { Database } from '@/server/db/database'
-import { parseOaRange } from '@/dictionaries/normalize/fgis-text'
+import { isTextOnlyOaUnit, parseOaRange } from '@/dictionaries/normalize/fgis-text'
 import { canConvert, tryConvert } from '@/dictionaries/units/convert'
 import { parseFactValueNumber } from '@/validation/fact-value'
 import {
@@ -386,7 +386,12 @@ export function protocolRunChecks(
         add('E15', 'error', `Единица не найдена в справочнике: ${excelUnit}`, {
           resultId: result.id,
         })
-      } else if (oaUnit && !canConvert(excelUnit, oaUnit, db.unitConversions)) {
+      } else if (
+        oaUnit &&
+        // текстовая единица ОА («указание не требуется») — сверять не с чем
+        !isTextOnlyOaUnit(oaUnit, oa.unitFgisId) &&
+        !canConvert(excelUnit, oaUnit, db.unitConversions)
+      ) {
         add(
           'E15',
           'error',
@@ -394,7 +399,13 @@ export function protocolRunChecks(
           { resultId: result.id },
         )
       }
-    } else if (oaUnit) {
+    } else if (
+      oaUnit &&
+      !isTextOnlyOaUnit(oaUnit, oa.unitFgisId) &&
+      // текстовый результат («соответствует», «наличие») единицы не имеет
+      parseFactValueNumber(result.factValue.replace(/^[≤≥<>]/, '')) != null
+    ) {
+      // «наличие/отсутствие», «указание не требуется» — единицы в протоколе и не должно быть
       add('E15', 'error', `Не указана единица результата: ${result.sourceKey}`, {
         resultId: result.id,
       })

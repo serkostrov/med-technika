@@ -251,6 +251,8 @@ export async function buildRealProtocolXml(setup: RealReferenceSetup): Promise<{
     xml: detail.xmlPreview,
     resultsWithOa: detail.results.filter((r) => r.oaItemId).length,
     resultsTotal: detail.results.length,
+    /** ошибки единиц (E15) — у эталонов их быть не должно */
+    unitErrors: detail.issues.filter((i) => i.code === 'E15').map((i) => i.message),
   }
 }
 

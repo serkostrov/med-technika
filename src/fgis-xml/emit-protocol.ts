@@ -10,6 +10,7 @@ import type {
   Staff,
   Unit,
 } from '@/domain'
+import { isTextOnlyOaUnit } from '@/dictionaries/normalize/fgis-text'
 import { el, wrap } from './escape'
 import { arrayBufferToBase64, toFgisPhone } from './util'
 
@@ -173,7 +174,7 @@ function emitResearch(result: ProtocolResult, ctx: ProtocolXmlContext): string {
     unit?.fgisId ? el('MeasurementId', unit.fgisId) : '',
     // единицы в протоколе нет — текстовая единица позиции ОА
     // («наличие/отсутствие», «указание не требуется» — эталон 426-26-ЭП)
-    !result.unitSymbol && oa?.unitText?.trim() && (!oa.unitFgisId || oa.unitFgisId === '0')
+    !result.unitSymbol && oa && isTextOnlyOaUnit(oa.unitText, oa.unitFgisId)
       ? el('UniqueMeasurement', oa.unitText.trim())
       : '',
     el('DocNameId', docNameId),

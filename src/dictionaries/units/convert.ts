@@ -1,5 +1,14 @@
 import type { UnitConversion } from '@/domain'
 
+/** «шт.» = «шт», «пар лин./мм.» = «пар лин./мм»: точка в конце — пунктуация ОА. */
+export function unitKey(symbol: string): string {
+  return symbol.trim().replace(/\.+$/, '').replace(/\s+/g, ' ')
+}
+
+function sameUnit(a: string, b: string): boolean {
+  return unitKey(a) === unitKey(b)
+}
+
 /**
  * Пересчёт значения между единицами через unit_conversions (ТЗ §7.5).
  * Одинаковые символы → factor 1. Прямой или обратный коэффициент.
@@ -10,7 +19,7 @@ export function convert(
   toSymbol: string,
   conversions: readonly UnitConversion[],
 ): number {
-  if (fromSymbol === toSymbol) return value
+  if (sameUnit(fromSymbol, toSymbol)) return value
   const direct = conversions.find(
     (c) => c.fromSymbol === fromSymbol && c.toSymbol === toSymbol,
   )
@@ -27,7 +36,7 @@ export function canConvert(
   toSymbol: string,
   conversions: readonly UnitConversion[],
 ): boolean {
-  if (fromSymbol === toSymbol) return true
+  if (sameUnit(fromSymbol, toSymbol)) return true
   return conversions.some(
     (c) =>
       (c.fromSymbol === fromSymbol && c.toSymbol === toSymbol) ||

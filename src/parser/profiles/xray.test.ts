@@ -77,6 +77,8 @@ describe('26-ЭП дентальный (периодические испыта�
       },
     })
     expect(built.resultsWithOa).toBe(29)
+    // «наличие», «указание не требуется» — без единицы, это не ошибка (427-26-ЭП, ИЛ 18.11.2026)
+    expect(built.unitErrors).toEqual([])
     // в этом эталоне утечка без хвостового нуля («0,0576»), в остальных ЭП — по формату ячейки
     const expected = adjustReference(realReferenceXml('426-26-ЭП'), {
       replace: [['<FactValue>0,0576</FactValue>', '<FactValue>0,05760</FactValue>']],

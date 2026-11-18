@@ -80,6 +80,18 @@ function collectListUntilNextAnchor(
 }
 
 /**
+ * Несколько пунктов испытательного / вспомогательного оборудования в одной ячейке
+ * (427-26-ЭП: «…ТПР-1-2. Зав.№ б/н. Аттестат № 3-22-ИО, дата выдачи 11.02.2022 г. Фантом
+ * дентальный …»): новый пункт — после «дата выдачи ДД.ММ.ГГГГ г.» / «действителен до …».
+ */
+export function splitEquipmentItems(line: string): string[] {
+  return line
+    .split(/(?<=(?:выдачи|до)\s*\d{2}\.\d{2}\.\d{4}\s*г?\.?)\s+(?=[А-ЯЁA-Z])/)
+    .map((p) => p.trim())
+    .filter(Boolean)
+}
+
+/**
  * Regex строки СИ (ТЗ §6.3 — группы как в демо parse.py).
  * наименование, зав.№, свидетельство, дата поверки, действительна до.
  */
@@ -386,7 +398,7 @@ export function parseHeader(grid: SheetGrid): {
   const auxRows = findAnchorRows(grid, ['вспомогательное оборудование:'])
   if (auxRows.length > 0) {
     const lines = collectListUntilNextAnchor(grid, auxRows[0]!, LIST_STOPS, true)
-    for (const line of lines) {
+    for (const line of lines.flatMap(splitEquipmentItems)) {
       equipment.push(parseAuxLine(line, EquipmentKind.aux))
     }
   }
@@ -394,7 +406,7 @@ export function parseHeader(grid: SheetGrid): {
   const testRows = findAnchorRows(grid, ['испытательное оборудование:'])
   if (testRows.length > 0) {
     const lines = collectListUntilNextAnchor(grid, testRows[0]!, LIST_STOPS, true)
-    for (const line of lines) {
+    for (const line of lines.flatMap(splitEquipmentItems)) {
       equipment.push(parseAuxLine(line, EquipmentKind.test))
     }
   }

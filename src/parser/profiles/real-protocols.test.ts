@@ -121,6 +121,7 @@ describe('боевые протоколы лаборатории → XML = эт�
     const built = await buildRealProtocolXml({ name, customer: 'fromReference', lab: true, equipment, sheet })
     expect(built.resultsTotal).toBe(results)
     expect(built.resultsWithOa).toBe(results)
+    expect(built.unitErrors).toEqual([])
     if (xmlFromOtherVersion) return
     const reference = adjust
       ? adjustReference(realReferenceXml(name), adjust)

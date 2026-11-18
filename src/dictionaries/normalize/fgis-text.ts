@@ -45,3 +45,15 @@ export function parseOaRange(rangeText: string): {
   if (!Number.isFinite(min) || !Number.isFinite(max)) return { min: null, max: null }
   return { min, max }
 }
+
+/**
+ * Единица позиции ОА — не единица измерения, а текст: «наличие/отсутствие» (в ОА id 5-1),
+ * «указание не требуется» (id 0). В протоколе единицы нет, в XML — UniqueMeasurement.
+ */
+export function isTextOnlyOaUnit(unitText: string | null | undefined, unitFgisId: string | null | undefined): boolean {
+  const text = unitText?.trim().toLowerCase() ?? ''
+  if (!text) return false
+  if (/^(наличие|указание не требуется)/.test(text)) return true
+  const id = unitFgisId?.trim() ?? ''
+  return !id || id === '0' || !/^\d+$/.test(id)
+}
