@@ -128,11 +128,11 @@ INSERT INTO protocol_forms (
     '2 р.м плёнка и цифра',
     '2 р.м плёнка и цифра',
     'xray',
-    'no_materials',
-    NULL,
+    'ready',
+    1,
     'DM-55254',
     NULL,
-    '{}'::jsonb
+    '{"numberSuffix":"ЭП","objectFullNameFromOa":true,"textIndicatorDirectory":""}'::jsonb
   ),
   (
     '33333333-3333-4333-8333-0000000000d3',
@@ -141,11 +141,11 @@ INSERT INTO protocol_forms (
     'Телеуправляемый УРИ+цифра',
     'Телеуправляемый УРИ+цифра',
     'xray',
-    'no_materials',
-    NULL,
+    'ready',
+    1,
     'DM-55254',
     NULL,
-    '{}'::jsonb
+    '{"numberSuffix":"ЭП","objectFullNameFromOa":true,"textIndicatorDirectory":""}'::jsonb
   ),
   (
     '33333333-3333-4333-8333-0000000000d4',
@@ -180,11 +180,11 @@ INSERT INTO protocol_forms (
     'Палатный со скопией+цифра',
     'Палатный со скопией+цифра',
     'xray',
-    'no_materials',
-    NULL,
+    'ready',
+    1,
     'DM-55254',
     NULL,
-    '{}'::jsonb
+    '{"numberSuffix":"ЭП","objectFullNameFromOa":true,"textIndicatorDirectory":""}'::jsonb
   ),
   (
     '33333333-3333-4333-8333-0000000000d7',
@@ -193,11 +193,11 @@ INSERT INTO protocol_forms (
     'Флюорограф без УРИ',
     'Флюорограф без УРИ',
     'xray',
-    'no_materials',
-    NULL,
+    'ready',
+    1,
     'DM-55254',
     NULL,
-    '{}'::jsonb
+    '{"numberSuffix":"ЭП","objectFullNameFromOa":true,"textIndicatorDirectory":""}'::jsonb
   ),
   (
     '33333333-3333-4333-8333-0000000000d8',
@@ -219,11 +219,11 @@ INSERT INTO protocol_forms (
     'Маммограф пленка+цифра',
     'Маммограф пленка+цифра',
     'xray',
-    'no_materials',
-    NULL,
+    'ready',
+    1,
     'DM-55254',
     NULL,
-    '{}'::jsonb
+    '{"numberSuffix":"ЭП","objectFullNameFromOa":true,"textIndicatorDirectory":""}'::jsonb
   ),
   (
     '33333333-3333-4333-8333-0000000000da',
@@ -232,11 +232,11 @@ INSERT INTO protocol_forms (
     'Ортопантомограф плёнка+цифра',
     'Ортопантомограф плёнка+цифра',
     'xray',
-    'no_materials',
-    NULL,
+    'ready',
+    1,
     'DM-55254',
     NULL,
-    '{}'::jsonb
+    '{"numberSuffix":"ЭП","objectFullNameFromOa":true,"textIndicatorDirectory":""}'::jsonb
   ),
   (
     '33333333-3333-4333-8333-0000000000db',

@@ -31,6 +31,8 @@ export const SEED_UNITS: readonly Unit[] = [
   { fgisId: '749', name: 'миллигрей в час', symbol: 'мГр/ч' },
   { fgisId: '740', name: 'пара линий на миллиметр', symbol: 'пар лин./мм' },
   { fgisId: '1', name: 'миллиметр', symbol: 'мм' },
+  { fgisId: '738', name: 'миллиампер-секунда', symbol: 'мАс' },
+  { fgisId: '133', name: 'штука', symbol: 'шт' },
   // 26-РК: эталон 328-26-РК
   { fgisId: '684', name: 'микрозиверт в час', symbol: 'мкЗв/ч' },
   // 26-ЭД: эталон 272-26-ЭД

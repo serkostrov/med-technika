@@ -29,9 +29,28 @@ export function realReferenceXml(name: string): string {
  */
 export function adjustReference(
   xml: string,
-  fix: { addEquipmentIds?: number[]; replace?: [from: string, to: string][] },
+  fix: {
+    addEquipmentIds?: number[]
+    replace?: [from: string, to: string][]
+    /** продублировать N-ю запись ResearchObjectInfo (1-based) — запись, которую ИЛ пропустила */
+    duplicateResultAt?: number
+    /** адрес места измерений (IdAddrType 3) — из протокола (ответ ИЛ 16.11.2026) */
+    measureAddress?: string
+  },
 ): string {
   let out = xml
+  if (fix.measureAddress != null) {
+    out = out.replace(
+      /(<IdAddrType>\s*3\s*<\/IdAddrType>[\s\S]*?<UniqueAddressText>)[\s\S]*?(<\/UniqueAddressText>)/,
+      `$1${fix.measureAddress}$2`,
+    )
+  }
+  if (fix.duplicateResultAt != null) {
+    let n = 0
+    out = out.replace(/<ResearchObjectInfo>[\s\S]*?<\/ResearchObjectInfo>/g, (m) =>
+      ++n === fix.duplicateResultAt ? m + m : m,
+    )
+  }
   for (const id of fix.addEquipmentIds ?? []) {
     out = out.replace(
       /<\/Equipment>/,
@@ -99,6 +118,8 @@ export type RealReferenceSetup = {
   lab?: boolean
   /** ручные правки карточки после загрузки (как сделал бы инженер) */
   protocolPatch?: Partial<Pick<Protocol, 'customerPhone' | 'measureAddress'>>
+  /** лист, если в книге заполнено несколько (выбор пользователя, ТЗ 6.2) */
+  sheet?: string
 }
 
 export async function buildRealProtocolXml(setup: RealReferenceSetup): Promise<{
@@ -177,7 +198,12 @@ export async function buildRealProtocolXml(setup: RealReferenceSetup): Promise<{
 
   const login = await api.login(SeedCredentials.head.email, SeedCredentials.head.password)
   const head = api.auth.resolveToken(login.token)
-  const up = await api.uploads.parseUpload(head, `${setup.name}.xlsx`, realXlsx(setup.name))
+  const up = await api.uploads.parseUpload(
+    head,
+    `${setup.name}.xlsx`,
+    realXlsx(setup.name),
+    setup.sheet ?? null,
+  )
   if (up.error) throw new Error(`parseUpload: ${up.error}`)
   const reference = realReferenceXml(setup.name)
   if (setup.customer === 'fromReference') {

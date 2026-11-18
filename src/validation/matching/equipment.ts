@@ -6,7 +6,10 @@ export function matchEquipment(
   serialRaw: string | null | undefined,
   name: string | null | undefined,
 ): Equipment | null {
-  if (!serialRaw?.trim()) return matchByNameWithoutSerial(equipment, name)
+  // «б/н», «-» — номера нет (26-ЭП: кассета, тест-объекты) → по наименованию
+  if (!serialRaw?.trim() || /^(б\s*\/\s*н|-|—)\.?$/i.test(serialRaw.trim())) {
+    return matchByNameWithoutSerial(equipment, name)
+  }
   const norm = normalizeSerial(serialRaw)
   const bySerial = equipment.filter(
     (e) => e.deletedAt === null && e.serialNorm === norm,
@@ -57,5 +60,26 @@ function matchByNameWithoutSerial(
     const k = equipmentNameKey(e.name)
     return k.length >= 6 && key.includes(k)
   })
-  return contained.length === 1 ? contained[0]! : null
+  if (contained.length === 1) return contained[0]!
+  if (contained.length > 1) return null
+  return matchByModelCode(active, name)
+}
+
+/** Обозначения моделей: «ТКЧ-03К», «ТПР-1-2», «НГС-1К» (буквы + дефис / цифры). */
+function modelCodes(name: string): string[] {
+  return (name.toUpperCase().match(/[A-ZА-ЯЁ]{2,}(?:-[A-ZА-ЯЁ\d]+)+/g) ?? []).filter((c) => c.length >= 5)
+}
+
+/**
+ * Последний шанс для «б/н»: в протоколе и справочнике прибор назван по-разному
+ * («Тест-контроль чувствительности ТКЧ-03К» / «Тест контрастной чувствительности ТКЧ-03»),
+ * общее — обозначение модели. Совпадение (одно — начало другого) только однозначное.
+ */
+function matchByModelCode(equipment: readonly Equipment[], name: string): Equipment | null {
+  const codes = modelCodes(name)
+  if (codes.length === 0) return null
+  const hits = equipment.filter((e) =>
+    modelCodes(e.name).some((dc) => codes.some((pc) => pc === dc || pc.startsWith(dc) || dc.startsWith(pc))),
+  )
+  return hits.length === 1 ? hits[0]! : null
 }

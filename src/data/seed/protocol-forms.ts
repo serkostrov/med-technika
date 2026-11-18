@@ -104,7 +104,17 @@ export const SEED_PROTOCOL_FORMS: readonly ProtocolForm[] = [
     'Флюорограф с УРИ',
     'Маммограф пленка+цифра',
     'Ортопантомограф плёнка+цифра',
-  ]),
+  ]).map((f) =>
+    // эталоны 412, 385, 386, 403, 408, 414-26-ЭП
+    ['2 р.м плёнка и цифра', 'Телеуправляемый УРИ+цифра', 'Палатный со скопией+цифра', 'Ортопантомограф плёнка+цифра', 'Маммограф пленка+цифра', 'Флюорограф без УРИ'].includes(f.sheetName.trim())
+      ? {
+          ...f,
+          status: FormStatus.ready,
+          typeObjectId: 1,
+          settings: { numberSuffix: 'ЭП', objectFullNameFromOa: true, textIndicatorDirectory: '' },
+        }
+      : f,
+  ),
   {
     id: SeedIds.formXrayDental,
     kindId: 2,

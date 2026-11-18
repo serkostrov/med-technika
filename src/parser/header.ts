@@ -45,6 +45,8 @@ function collectListUntilNextAnchor(
   grid: SheetGrid,
   startRow: number,
   stopAnchors: string[],
+  /** вспомогательное / испытательное: пункты без номеров, одна строка = один пункт (26-ЭП) */
+  oneRowPerItem = false,
 ): string[] {
   const stops = stopAnchors.map((a) => normalizeText(a).toLowerCase())
   const lines: string[] = []
@@ -64,7 +66,7 @@ function collectListUntilNextAnchor(
     // («…при нормальных условиях…», «…температуры…») слова-стопы встречаются
     const aNorm = normalizeText(cellText(grid, r, COL.A)).toLowerCase()
     if (!startsItem && aNorm && stops.some((s) => aNorm.startsWith(s))) break
-    if (startsItem) {
+    if (startsItem || oneRowPerItem) {
       if (buf) lines.push(buf)
       buf = full
     } else if (buf) {
@@ -355,6 +357,7 @@ export function parseHeader(grid: SheetGrid): {
     'обозначение нд',
     'обозначение',
     'место проведения',
+    'описание объекта',
     'условия',
     'температура',
     'результаты',
@@ -375,7 +378,7 @@ export function parseHeader(grid: SheetGrid): {
 
   const auxRows = findAnchorRows(grid, ['вспомогательное оборудование:'])
   if (auxRows.length > 0) {
-    const lines = collectListUntilNextAnchor(grid, auxRows[0]!, LIST_STOPS)
+    const lines = collectListUntilNextAnchor(grid, auxRows[0]!, LIST_STOPS, true)
     for (const line of lines) {
       equipment.push(parseAuxLine(line, EquipmentKind.aux))
     }
@@ -383,7 +386,7 @@ export function parseHeader(grid: SheetGrid): {
 
   const testRows = findAnchorRows(grid, ['испытательное оборудование:'])
   if (testRows.length > 0) {
-    const lines = collectListUntilNextAnchor(grid, testRows[0]!, LIST_STOPS)
+    const lines = collectListUntilNextAnchor(grid, testRows[0]!, LIST_STOPS, true)
     for (const line of lines) {
       equipment.push(parseAuxLine(line, EquipmentKind.test))
     }

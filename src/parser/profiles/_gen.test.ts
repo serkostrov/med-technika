@@ -1,4 +1,5 @@
-import { readFileSync, writeFileSync } from 'node:fs'
+import { existsSync, readFileSync, writeFileSync } from 'node:fs'
+import { basename } from 'node:path'
 import { it } from 'vitest'
 import { FormStatus } from '@/domain'
 import { createSeedBundle } from '@/data/seed'
@@ -17,10 +18,12 @@ it.skipIf(!process.env.GEN_FILES)('gen', () => {
   const seed = createSeedBundle()
   const forms = seed.protocolForms.map((f) => ({ ...f, status: FormStatus.ready }))
   const out: unknown[] = []
-  for (const file of FILES) {
+  for (const spec of FILES) {
+    const [file, sheet] = spec.split('@') as [string, string | undefined]
     const buf = readFileSync(file + '.xlsx')
-    const xml = readFileSync(file + '.xml', 'utf8').replace(/<Content>[\s\S]*?<\/Content>/, '')
-    const p = parseProtocol({ data: buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength) as ArrayBuffer, forms, indicatorMaps: seed.formIndicatorMaps })
+    const xmlPath = existsSync(file + '.xml') ? file + '.xml' : `src/fgis-xml/fixtures/real/${basename(file)}.xml`
+    const xml = readFileSync(xmlPath, 'utf8').replace(/<Content>[\s\S]*?<\/Content>/, '')
+    const p = parseProtocol({ data: buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength) as ArrayBuffer, forms, indicatorMaps: seed.formIndicatorMaps, preferredSheetName: sheet ?? null })
     const infos = [...xml.matchAll(/<ResearchObjectInfo>([\s\S]*?)<\/ResearchObjectInfo>/g)].map((m) => m[1]!)
     const byKey: Record<string, unknown> = {}
     p.results.forEach((r, i) => {

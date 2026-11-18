@@ -3,6 +3,7 @@ import { createSeedBundle } from '@/data/seed'
 import { parseProtocol } from '@/parser'
 import {
   buildRealProtocolXml,
+  adjustReference,
   normalizeForCompare,
   realReferenceXml,
   realXlsx,
@@ -42,7 +43,8 @@ describe('26-ЭП дентальный (периодические испыта�
       '0,0979', '0,9973', '2,10', '0,27', '0,0978', '0,9976', '2,20', '0,24',
       '0,0279', '0,0672', '0,0020',
       '0,046', '0,058', '0,061', '0,047', '0,059',
-      '0,0576', 'отсутствие', '6,3', '1,0',
+      // утечка — по формату ячейки 0.00000 (как в 412 / 385 / 408-26-ЭП)
+      '0,05760', 'отсутствие', '6,3', '1,0',
     ])
     // скрытые Unfors Xi и ТПР-1-2 не применялись; подсказки шаблона правее не попадают
     expect(parsed.equipment.map((e) => [e.kind, e.serialRaw])).toEqual([
@@ -75,6 +77,10 @@ describe('26-ЭП дентальный (периодические испыта�
       },
     })
     expect(built.resultsWithOa).toBe(29)
-    expect(normalizeForCompare(built.xml)).toBe(normalizeForCompare(realReferenceXml('426-26-ЭП')))
+    // в этом эталоне утечка без хвостового нуля («0,0576»), в остальных ЭП — по формату ячейки
+    const expected = adjustReference(realReferenceXml('426-26-ЭП'), {
+      replace: [['<FactValue>0,0576</FactValue>', '<FactValue>0,05760</FactValue>']],
+    })
+    expect(normalizeForCompare(built.xml)).toBe(normalizeForCompare(expected))
   })
 })
