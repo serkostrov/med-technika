@@ -86,3 +86,23 @@ describe('26-ЭП дентальный (периодические испыта�
     expect(normalizeForCompare(built.xml)).toBe(normalizeForCompare(expected))
   })
 })
+
+describe('26-ЭП дентальный — 427-26-ЭП (отзыв ИЛ 18.11.2026)', { timeout: 30_000 }, () => {
+  it('ТПР-1-2 и DigiDent в одной ячейке — два испытательных оборудования; все показатели в ОА', () => {
+    const seed = createSeedBundle()
+    const parsed = parseProtocol({
+      data: realXlsx('427-26-ЭП'),
+      forms: seed.protocolForms,
+      indicatorMaps: seed.formIndicatorMaps,
+    })
+    expect(parsed.equipment.filter((e) => e.kind === 'test').map((e) => e.serialRaw)).toEqual([
+      'б/н',
+      '10-301-0751',
+    ])
+    expect(parsed.results).toHaveLength(33)
+    const mapped = new Set(
+      seed.formIndicatorMaps.filter((m) => m.formId === parsed.formId).map((m) => m.sourceKey),
+    )
+    expect(parsed.results.filter((r) => !mapped.has(r.sourceKey))).toEqual([])
+  })
+})
