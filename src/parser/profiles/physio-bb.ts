@@ -24,6 +24,24 @@ function sourceKey(indicator: string, unit: string | null): string {
   return `${indicator}${unit ? `, ${unit}` : ''}`.toLowerCase()
 }
 
+/**
+ * Заголовок блока: A = «№», показатель «<название>, <единица>» — обычно в AC,
+ * но бывает правее (26-МТ «Лазер ИМИ»: «Длительность импульса, нс» в AK);
+ * «Длина волны …» — описательная колонка, не показатель.
+ */
+function blockIndicator(grid: SheetGrid, r: number): string | null {
+  if (cellText(grid, r, COL.A).trim() !== '№') return null
+  for (let c = COL.AC; c <= COL.AS; c++) {
+    const t = cellText(grid, r, c)
+    if (t.includes(',') && !/^длина волны/i.test(t.trim())) return t
+  }
+  return null
+}
+
+/** Режим поля (26-МТ «Магнито-терапия», колонка K): от него зависит позиция ОА. */
+const FIELD_MODE_RE = /^(переменн|импульсн|постоянн)/i
+const COL_MODE = 10 // K
+
 function bbBeAllNumeric(grid: SheetGrid, r: number): number[] | null {
   const vals: number[] = []
   for (const c of [COL.BB, COL.BC, COL.BD, COL.BE]) {
@@ -46,12 +64,10 @@ export function parsePhysioBb(
   const objects: ParsedObject[] = []
   const results: ParsedResult[] = []
 
-  // найти заголовок блока: A=«№», AC содержит показатель
+  // найти заголовок блока: A=«№», показатель в AC (или правее)
   let headerRow = -1
   for (let r = 0; r <= grid.maxRow; r++) {
-    const a = cellText(grid, r, COL.A).trim()
-    const ac = cellText(grid, r, COL.AC)
-    if (a === '№' && ac.includes(',')) {
+    if (blockIndicator(grid, r)) {
       headerRow = r
       break
     }
@@ -62,20 +78,19 @@ export function parsePhysioBb(
   }
 
   // текущий показатель из заголовка / смены AC в заголовочных строках
-  let currentIndicator = cellText(grid, headerRow, COL.AC)
+  let currentIndicator = blockIndicator(grid, headerRow)!
   let objectSeq = 0
   const objectKey = new Map<string, number>()
 
   for (let r = headerRow + 1; r <= grid.maxRow; r++) {
-    if (isRowHidden(grid, r)) continue
-    const a = cellText(grid, r, COL.A).trim()
-    const ac = cellText(grid, r, COL.AC)
-
-    // новый подзаголовок показателя
-    if (a === '№' && ac.includes(',')) {
-      currentIndicator = ac
+    // новый подзаголовок показателя — учитываем и скрытый (его строки тоже скрыты,
+    // но следующий видимый блок без заголовка иначе получил бы чужой показатель)
+    const header = blockIndicator(grid, r)
+    if (header) {
+      currentIndicator = header
       continue
     }
+    if (isRowHidden(grid, r)) continue
 
     const rawValues = bbBeAllNumeric(grid, r)
     if (!rawValues) continue
@@ -103,7 +118,10 @@ export function parsePhysioBb(
     }
 
     const { indicator, unit } = splitIndicatorUnit(currentIndicator)
-    const key = sourceKey(indicator, unit)
+    const mode = cellText(grid, r, COL_MODE).trim()
+    const key = FIELD_MODE_RE.test(mode)
+      ? `${sourceKey(indicator, unit)} | ${mode.toLowerCase()}`
+      : sourceKey(indicator, unit)
     const map = maps.find((m) => m.sourceKey === key)
 
     const setValue = cellText(grid, r, COL.AC) || null

@@ -191,7 +191,10 @@ function parsePlaceBlock(grid: SheetGrid, startRow: number): {
       place = val
     }
   }
-  return { place, address }
+  return {
+    place: place ? normalizeText(place) : null,
+    address: address ? normalizeText(address) : null,
+  }
 }
 
 const CONDITION_LABELS: { key: 't' | 'rh' | 'p'; re: RegExp }[] = [

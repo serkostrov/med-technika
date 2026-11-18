@@ -5,6 +5,7 @@ import { AppRole, CustomerKindId, EquipmentKind, type Protocol } from '@/domain'
 import { normalizeSerial } from '@/dictionaries/normalize/text'
 import { canonicalizeFgisXml } from '@/fgis-xml'
 import { bootstrapServer, SeedCredentials } from '@/server'
+import type { Database } from '@/server/db/database'
 
 /**
  * Боевые протоколы клиента (П+X): Excel → сохранение → XML и сверка
@@ -51,8 +52,15 @@ export function normalizeForCompare(xml: string): string {
 
 export type RealReferenceSetup = {
   name: string
-  applicationDate: string
-  customer: {
+  /** по умолчанию — из эталонного XML */
+  applicationDate?: string
+  /**
+   * Заказчик. «fromReference» — карточка с названием из протокола и ИНН / ОГРН /
+   * телефоном / юр. адресом из эталонного XML (как её завела бы лаборатория).
+   */
+  customer:
+    | 'fromReference'
+    | {
     name: string
     inn: string
     ogrn: string
@@ -66,7 +74,12 @@ export type RealReferenceSetup = {
    * зав.№ → EquipmentId ФГИС (null — СИ без кода, в XML не попадает).
    * Ключ `name:<наименование>` — оборудование без номера («б/н»).
    */
-  equipment: Record<string, number | null>
+  equipment?: Record<string, number | null>
+  /**
+   * Справочники лаборатории («ID персонал и оборудование.xlsx»): 70 СИ с EquipmentId
+   * и 7 сотрудников с idFullName — сопоставление как в реальной работе.
+   */
+  lab?: boolean
   /** ручные правки карточки после загрузки (как сделал бы инженер) */
   protocolPatch?: Partial<Pick<Protocol, 'customerPhone' | 'measureAddress'>>
 }
@@ -79,7 +92,7 @@ export async function buildRealProtocolXml(setup: RealReferenceSetup): Promise<{
   const { api } = await bootstrapServer()
   const db = api.getDbForTests()
 
-  db.customers.push({
+  if (setup.customer !== 'fromReference') db.customers.push({
     id: crypto.randomUUID(),
     name: setup.customer.name,
     nameAliases: [],
@@ -118,7 +131,8 @@ export async function buildRealProtocolXml(setup: RealReferenceSetup): Promise<{
       deletedAt: null,
     })
   }
-  for (const [key, fgisId] of Object.entries(setup.equipment)) {
+  if (setup.lab) loadLabDictionaries(db)
+  for (const [key, fgisId] of Object.entries(setup.equipment ?? {})) {
     const id = crypto.randomUUID()
     const byName = key.startsWith('name:')
     const serial = byName ? null : key
@@ -148,12 +162,35 @@ export async function buildRealProtocolXml(setup: RealReferenceSetup): Promise<{
   const head = api.auth.resolveToken(login.token)
   const up = await api.uploads.parseUpload(head, `${setup.name}.xlsx`, realXlsx(setup.name))
   if (up.error) throw new Error(`parseUpload: ${up.error}`)
+  const reference = realReferenceXml(setup.name)
+  if (setup.customer === 'fromReference') {
+    const customerXml = /<Customer>([\s\S]*?)<\/Customer>/.exec(reference)?.[1] ?? ''
+    const tag = (t: string) => new RegExp(`<${t}>\\s*([^<]*?)\\s*</${t}>`).exec(customerXml)?.[1] ?? null
+    db.customers.push({
+      id: crypto.randomUUID(),
+      name: up.parsed!.metadata.customerName ?? 'Заказчик',
+      nameAliases: [],
+      kindId: CustomerKindId.legalEntity,
+      inn: tag('InnId'),
+      ogrn: tag('OgrnId'),
+      phone: tag('Number'),
+      email: null,
+      legalAddress: tag('UniqueAddressText'),
+      actualAddress: null,
+      createdAt: new Date().toISOString(),
+      deletedAt: null,
+    })
+  }
+  const applicationDate =
+    setup.applicationDate ??
+    /<ApplicationDate>\s*([^<]*?)\s*<\/ApplicationDate>/.exec(reference)?.[1] ??
+    null
   const saved = api.uploads.saveParsed(head, {
     sourcePath: up.sourcePath,
     sha256: up.sha256,
     parsed: up.parsed!,
   })
-  api.updateProtocol(head, saved.id, { applicationDate: setup.applicationDate })
+  api.updateProtocol(head, saved.id, { applicationDate })
   if (setup.protocolPatch) {
     Object.assign(db.protocols.find((p) => p.id === saved.id)!, setup.protocolPatch)
   }
@@ -188,3 +225,59 @@ export const GROMOV = {
   surname: 'Громов',
   fgisIdFullName: 293723,
 } as const
+
+type LabDictionaries = {
+  staff: { surname: string; fgisIdFullName: number; postName: string }[]
+  equipment: { name: string; serial: string; fgisEquipmentId: number }[]
+}
+
+function loadLabDictionaries(db: Database): void {
+  const lab = JSON.parse(
+    readFileSync(join(HERE, 'lab-dictionaries.json'), 'utf8'),
+  ) as LabDictionaries
+  for (const s of lab.staff) {
+    const existing = db.staff.find((x) => x.surname === s.surname)
+    if (existing) {
+      existing.fgisIdFullName = s.fgisIdFullName
+      continue
+    }
+    db.staff.push({
+      id: crypto.randomUUID(),
+      authUserId: null,
+      fullName: s.surname,
+      shortName: s.surname,
+      surname: s.surname,
+      fgisIdFullName: s.fgisIdFullName,
+      postName: 'Испытатель',
+      fgisRoleIds: [1],
+      appRole: AppRole.engineer,
+      isActive: true,
+      deletedAt: null,
+    })
+  }
+  for (const e of lab.equipment) {
+    const id = crypto.randomUUID()
+    const serial = e.serial && !/^(б\/н|-)$/i.test(e.serial) ? e.serial : null
+    db.equipment.push({
+      id,
+      name: e.name,
+      serialNo: serial,
+      serialNorm: serial ? normalizeSerial(serial) : null,
+      invNo: null,
+      fgisEquipmentId: e.fgisEquipmentId,
+      kind: EquipmentKind.si,
+      isActive: true,
+      deletedAt: null,
+    })
+    db.equipmentVerifications.push({
+      id: crypto.randomUUID(),
+      equipmentId: id,
+      certNo: 'lab',
+      verifiedOn: '2026-01-01',
+      validUntil: '2027-12-31',
+      createdAt: new Date().toISOString(),
+      deletedAt: null,
+    })
+  }
+}
+

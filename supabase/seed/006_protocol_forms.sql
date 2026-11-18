@@ -50,11 +50,11 @@ INSERT INTO protocol_forms (
     'ПОТОК-1',
     'ПОТОК-1',
     'physio-bb',
-    'no_materials',
-    NULL,
+    'ready',
+    1,
     'DM-55254',
     NULL,
-    '{}'::jsonb
+    '{"numberSuffix":"МТ","textIndicatorDirectory":""}'::jsonb
   ),
   (
     '33333333-3333-4333-8333-00000000006f',
@@ -63,11 +63,11 @@ INSERT INTO protocol_forms (
     'Магнито-терапия',
     'Магнито-терапия',
     'physio-bb',
-    'no_materials',
-    NULL,
+    'ready',
+    1,
     'DM-55254',
     NULL,
-    '{}'::jsonb
+    '{"numberSuffix":"МТ","textIndicatorDirectory":""}'::jsonb
   ),
   (
     '33333333-3333-4333-8333-000000000070',
@@ -76,11 +76,11 @@ INSERT INTO protocol_forms (
     'Лазер ИМИ',
     'Лазер ИМИ',
     'physio-bb',
-    'no_materials',
-    NULL,
+    'ready',
+    1,
     'DM-55254',
     NULL,
-    '{}'::jsonb
+    '{"numberSuffix":"МТ","objectFullNameFromOa":"full","textIndicatorDirectory":""}'::jsonb
   ),
   (
     '33333333-3333-4333-8333-000000000071',
@@ -89,11 +89,11 @@ INSERT INTO protocol_forms (
     'Центрифуги',
     'Центрифуги',
     'physio-bb',
-    'no_materials',
-    NULL,
+    'ready',
+    1,
     'DM-55254',
     NULL,
-    '{}'::jsonb
+    '{"numberSuffix":"Ц","textIndicatorDirectory":""}'::jsonb
   ),
   (
     '33333333-3333-4333-8333-000000000072',
@@ -687,11 +687,11 @@ INSERT INTO protocol_forms (
     'Палатник',
     'Палатник',
     'rk',
-    'no_materials',
-    NULL,
+    'ready',
+    8,
     'DM-55254',
     NULL,
-    '{}'::jsonb
+    '{"numberSuffix":"РК","objectFullNameFromOa":true}'::jsonb
   ),
   (
     '33333333-3333-4333-8333-000000000209',

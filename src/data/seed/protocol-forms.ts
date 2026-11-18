@@ -57,7 +57,25 @@ export const SEED_PROTOCOL_FORMS: readonly ProtocolForm[] = [
     'Лазер ИМИ',
     'Центрифуги',
     'ИВЛ, концентраторы',
-  ]),
+  ]).map((f) => {
+    // эталоны 50-26-МТ, 57-26-МТ, 47-26-МТ, 4-26-Ц: продукция, у текстовых показателей Directory пустой
+    const ready: Record<string, Record<string, unknown>> = {
+      'ПОТОК-1': { numberSuffix: 'МТ' },
+      'Магнито-терапия': { numberSuffix: 'МТ' },
+      // FullNameObject — полное «наименование объекта» позиции ОА (п. 1.50)
+      'Лазер ИМИ': { numberSuffix: 'МТ', objectFullNameFromOa: 'full' },
+      Центрифуги: { numberSuffix: 'Ц' },
+    }
+    const settings = ready[f.sheetName]
+    return settings
+      ? {
+          ...f,
+          status: FormStatus.ready,
+          typeObjectId: 1,
+          settings: { ...settings, textIndicatorDirectory: '' },
+        }
+      : f
+  }),
   ...formBatch(2, 'шаблон-26-ЭП', 'xray', [
     '2 р.м плёнка и цифра',
     'Телеуправляемый УРИ+цифра',
@@ -138,7 +156,8 @@ export const SEED_PROTOCOL_FORMS: readonly ProtocolForm[] = [
     'Стоматологический',
     'Ангиограф',
   ]).map((f) =>
-    f.sheetName === 'Стоматологический'
+    // эталоны 328-26-РК, 302-26-РК
+    ['Стоматологический', 'Палатник'].includes(f.sheetName)
       ? {
           ...f,
           // эталон 328-26-РК: помещения/территории (TypeObjectId 8), объект — из ОА п.3.8

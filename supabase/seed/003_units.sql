@@ -24,7 +24,10 @@ INSERT INTO units (fgis_id, name, symbol) VALUES
   ('740', 'пара линий на миллиметр', 'пар лин./мм'),
   ('1', 'миллиметр', 'мм'),
   ('684', 'микрозиверт в час', 'мкЗв/ч'),
-  ('811', 'миллизиверт', 'мЗв')
+  ('811', 'миллизиверт', 'мЗв'),
+  ('995', 'миллитесла', 'мТл'),
+  ('92', 'оборот в минуту', 'об/мин'),
+  ('819', 'наносекунда', 'нс')
 ON CONFLICT (fgis_id) DO UPDATE SET name = EXCLUDED.name, symbol = EXCLUDED.symbol;
 
 INSERT INTO unit_conversions (from_symbol, to_symbol, factor) VALUES
