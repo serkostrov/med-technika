@@ -39,6 +39,10 @@ export const SEED_UNITS: readonly Unit[] = [
   { fgisId: '995', name: 'миллитесла', symbol: 'мТл' },
   { fgisId: '92', name: 'оборот в минуту', symbol: 'об/мин' },
   { fgisId: '819', name: 'наносекунда', symbol: 'нс' },
+  // 26-МТ ИВЛ: эталон 5-26-ИВЛ
+  { fgisId: '73', name: 'килопаскаль', symbol: 'кПа' },
+  { fgisId: '613', name: 'литр', symbol: 'л' },
+  { fgisId: '1164', name: 'литр в минуту', symbol: 'л/мин' },
 ]
 
 /** Начальный набор пересчётов ТЗ §7.5. */

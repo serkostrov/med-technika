@@ -1,10 +1,9 @@
+/**
+ * Текст элемента. Кавычки не экранируем: атрибутов в выгрузке нет, а эталоны
+ * клиента пишут «"Анализатор калибровочный Citrex H4"» как есть (5-26-ИВЛ).
+ */
 export function escapeXml(text: string): string {
-  return text
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&apos;')
+  return text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
 }
 
 /** Тег с текстом; пустой → <Name></Name> (как в эталонах). */

@@ -56,7 +56,8 @@ export const SEED_PROTOCOL_FORMS: readonly ProtocolForm[] = [
     'Магнито-терапия',
     'Лазер ИМИ',
     'Центрифуги',
-    'ИВЛ, концентраторы',
+    // Прил. Б: «ИВЛ, концентраторы» — в файлах это два листа: «ИВЛ» и «концентраторы»
+    'ИВЛ',
   ]).map((f) => {
     // эталоны 50-26-МТ, 57-26-МТ, 47-26-МТ, 4-26-Ц: продукция, у текстовых показателей Directory пустой
     const ready: Record<string, Record<string, unknown>> = {
@@ -65,17 +66,34 @@ export const SEED_PROTOCOL_FORMS: readonly ProtocolForm[] = [
       // FullNameObject — полное «наименование объекта» позиции ОА (п. 1.50)
       'Лазер ИМИ': { numberSuffix: 'МТ', objectFullNameFromOa: 'full' },
       Центрифуги: { numberSuffix: 'Ц' },
+      ИВЛ: { numberSuffix: 'ИВЛ' },
     }
     const settings = ready[f.sheetName]
     return settings
       ? {
           ...f,
+          // ИВЛ — своя таблица «Определяемый показатель | значение | ±U | единица»
+          parserProfile: f.sheetName === 'ИВЛ' ? 'ivl' : f.parserProfile,
           status: FormStatus.ready,
           typeObjectId: 1,
           settings: { ...settings, textIndicatorDirectory: '' },
         }
       : f
   }),
+  {
+    // эталон 6-26-ИВЛ: таблица как у 26-МТ (показатель в AK)
+    id: SeedIds.formOxygenConcentrator,
+    kindId: 1,
+    templateFile: 'шаблон-26-МТ',
+    sheetName: 'концентраторы',
+    title: 'Концентраторы кислорода',
+    parserProfile: 'physio-bb',
+    status: FormStatus.ready,
+    typeObjectId: 1,
+    fgisDirectory: 'DM-55254',
+    conditionsLimits: null,
+    settings: { numberSuffix: 'ИВЛ', textIndicatorDirectory: '' },
+  },
   ...formBatch(2, 'шаблон-26-ЭП', 'xray', [
     '2 р.м плёнка и цифра',
     'Телеуправляемый УРИ+цифра',

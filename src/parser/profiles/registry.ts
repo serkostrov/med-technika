@@ -11,6 +11,7 @@ import { parseSz } from './sz'
 import { parseXray } from './xray'
 import { parseRk } from './rk'
 import { parseDose } from './dose'
+import { parseIvl } from './ivl'
 import type { SheetGrid } from '../sheet-utils'
 import type { ParsedObject, ParsedResult } from '../types'
 import { PROFILE_VERSIONS, type KnownParserProfile } from '../version'
@@ -37,6 +38,7 @@ const PROFILES: Record<KnownParserProfile, ProfileRunner> = {
   xray: (grid) => parseXray(grid),
   rk: (grid) => parseRk(grid),
   dose: (grid) => parseDose(grid),
+  ivl: (grid) => parseIvl(grid),
 }
 
 export function isImplementedProfile(

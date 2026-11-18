@@ -27,7 +27,10 @@ INSERT INTO units (fgis_id, name, symbol) VALUES
   ('811', 'миллизиверт', 'мЗв'),
   ('995', 'миллитесла', 'мТл'),
   ('92', 'оборот в минуту', 'об/мин'),
-  ('819', 'наносекунда', 'нс')
+  ('819', 'наносекунда', 'нс'),
+  ('73', 'килопаскаль', 'кПа'),
+  ('613', 'литр', 'л'),
+  ('1164', 'литр в минуту', 'л/мин')
 ON CONFLICT (fgis_id) DO UPDATE SET name = EXCLUDED.name, symbol = EXCLUDED.symbol;
 
 INSERT INTO unit_conversions (from_symbol, to_symbol, factor) VALUES
