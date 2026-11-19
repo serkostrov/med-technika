@@ -3,6 +3,7 @@ import type { Database } from '@/server/db/database'
 import { SEED_PROTOCOL_FORMS } from './protocol-forms'
 import { SEED_UNITS } from './units'
 import { SEED_FORM_INDICATOR_MAPS, SEED_OA_ITEMS } from './oa'
+import { SeedIds } from '@/data/ids'
 
 /**
  * Формы, убранные из seed: «Дети_» 26-ЭД обычный / расширенный — приложения
@@ -26,6 +27,17 @@ const RETIRED_FORM_IDS = new Set([
  *
  * Возвращает true, если что-то изменилось.
  */
+type OaItemPatch = Partial<Pick<Database['oaItems'][number], 'unitText' | 'unitFgisId'>>
+
+const OA_ITEM_FIXES: { id: string; from: OaItemPatch; to: OaItemPatch }[] = [
+  {
+    // 26-ЭП «Маммограф» light_field_match: единица по эталону 408-26-ЭП (19.11.2026)
+    id: SeedIds.oaItemEp062,
+    from: { unitText: 'шт.', unitFgisId: '133' },
+    to: { unitText: 'соответствует/не соответствует', unitFgisId: '0' },
+  },
+]
+
 export function syncSeedReferenceData(db: Database): boolean {
   let changed = false
 
@@ -75,6 +87,18 @@ export function syncSeedReferenceData(db: Database): boolean {
     if (!editionIds.has(seed.editionId)) continue
     if (db.oaItems.some((i) => i.id === seed.id)) continue
     db.oaItems.push(structuredClone(seed))
+    changed = true
+  }
+
+  // исправления seed-позиций ОА: только если позиция не правилась вручную (старые значения)
+  for (const fix of OA_ITEM_FIXES) {
+    const item = db.oaItems.find((i) => i.id === fix.id)
+    if (!item) continue
+    const untouched = Object.entries(fix.from).every(
+      ([k, v]) => item[k as keyof typeof item] === v,
+    )
+    if (!untouched) continue
+    Object.assign(item, fix.to)
     changed = true
   }
 

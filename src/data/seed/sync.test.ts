@@ -89,6 +89,19 @@ describe('syncSeedReferenceData', () => {
     expect(db.protocolForms.some((f) => f.sheetName === 'Дети_')).toBe(false)
   })
 
+  it('единица 408 light_field_match исправляется, ручная правка — не трогается', () => {
+    const db = createEmptyDatabase()
+    const item = db.oaItems.find((i) => i.id === SeedIds.oaItemEp062)!
+    Object.assign(item, { unitText: 'шт.', unitFgisId: '133' })
+    expect(syncSeedReferenceData(db)).toBe(true)
+    expect(item.unitText).toBe('соответствует/не соответствует')
+    expect(item.unitFgisId).toBe('0')
+
+    Object.assign(item, { unitText: 'ед.', unitFgisId: '133' })
+    expect(syncSeedReferenceData(db)).toBe(false)
+    expect(item.unitText).toBe('ед.')
+  })
+
   it('свежая БД уже синхронна', () => {
     expect(syncSeedReferenceData(createEmptyDatabase())).toBe(false)
   })
