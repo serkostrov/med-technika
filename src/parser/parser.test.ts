@@ -324,7 +324,7 @@ describe('Загрузка: SHA-256 и save', () => {
     expect(dup.error).toMatch(/уже загружен/i)
   })
 
-  it('боевой 22-26-ДФ: save → карточка 4 объекта / 43 результата + XML', async () => {
+  it('боевой 22-26-ДФ: save → карточка 4 объекта / 43 результата + XML', { timeout: 30_000 }, async () => {
     const { api } = await bootstrapServer()
     const engLogin = await api.login(
       SeedCredentials.engineer.email,

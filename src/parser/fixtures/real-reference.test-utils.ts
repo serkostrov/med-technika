@@ -38,6 +38,8 @@ export function adjustReference(
     removeResultAt?: number
     /** адрес места измерений (IdAddrType 3) — из протокола (ответ ИЛ 16.11.2026) */
     measureAddress?: string
+    /** вставить записи ResearchObjectInfo после N-й (1…): показатель, который ИЛ не выгрузила */
+    insertResultsAfter?: { at: number; results: string[] }
   },
 ): string {
   let out = xml
@@ -57,6 +59,13 @@ export function adjustReference(
     let n = 0
     out = out.replace(/<ResearchObjectInfo>[\s\S]*?<\/ResearchObjectInfo>/g, (m) =>
       ++n === fix.removeResultAt ? '' : m,
+    )
+  }
+  if (fix.insertResultsAfter != null) {
+    const { at, results } = fix.insertResultsAfter
+    let n = 0
+    out = out.replace(/<ResearchObjectInfo>[\s\S]*?<\/ResearchObjectInfo>/g, (m) =>
+      ++n === at ? m + results.join('') : m,
     )
   }
   for (const id of fix.addEquipmentIds ?? []) {

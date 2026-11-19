@@ -301,7 +301,14 @@ export const SEED_PROTOCOL_FORMS: readonly ProtocolForm[] = [
     fgisDirectory: 'DM-53535',
     settings: { numberSuffix: 'ПП' },
   })),
-  ...formBatch(12, 'шаблон-26-ПЧ', 'emf', ['БВЕК.431440.08.04 РЭ']),
+  ...formBatch(12, 'шаблон-26-ПЧ', 'emf', ['БВЕК.431440.08.04 РЭ']).map((f) => ({
+    ...f,
+    // основной лист ПЧ (ИЛ 19.11.2026), эталон 58-26-ПЧ: рабочие места, Directory пустой
+    status: FormStatus.ready,
+    typeObjectId: 10,
+    fgisDirectory: '',
+    settings: { numberSuffix: 'ПЧ' },
+  })),
   {
     id: SeedIds.formEmfPch,
     kindId: 12,

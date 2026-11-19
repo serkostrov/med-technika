@@ -155,6 +155,7 @@ describe('Domain integrity & seed', () => {
       'Протокол Микроклимат МИ',
       'ГОСТ 24940-2016',
       'ФР.1.34.2021.39109',
+      'БВЕК.431440.08.04 РЭ',
       'ГОСТ 9612',
     ]
     expect(ready.map((f) => f.sheetName).sort()).toEqual([...expected].sort())

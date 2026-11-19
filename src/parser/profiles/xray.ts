@@ -261,6 +261,14 @@ const SECTIONS: { title: string; parse: Parse }[] = [
     },
   },
   // «(отклонение, %)» — отдельным разделом; раньше базового заголовка (startsWith)
+  // КТ: «Точность анодного напряжения, отклонение (%)» — значения в той же строке
+  {
+    title: 'точность анодного напряжения, отклонение',
+    parse: (g, from, _to, emit) => {
+      // from — строка после заголовка; значения — в строке заголовка
+      for (const c of valueCols(g, from - 1, 1, true)) emit('kv_accuracy', from - 1, c, '%')
+    },
+  },
   { title: 'точность анодного напряжения (отклонение', parse: deviationSection('kv_accuracy') },
   {
     title: 'точность анодного напряжения',
@@ -396,8 +404,15 @@ const SECTIONS: { title: string; parse: Parse }[] = [
   { title: 'контрастная чувствительность', parse: nextRowResult('contrast_sensitivity') },
   { title: 'низкоконтрастное разрешение', parse: registration('low_contrast') },
   // ── КТ (419-26-ЭП «КТ периодич») ──
-  // точность установки U у КТ во ФГИС не выгружалась (эталон 419-26-ЭП)
-  { title: 'точность установки анодного напряжения', parse: () => {} },
+  // U — во ФГИС (ИЛ 19.11.2026, эталон 415-26-ЭП): «Результаты измерения» → строка «U, кВ»
+  {
+    title: 'точность установки анодного напряжения',
+    parse: (g, from, to, emit) => {
+      const res = findRow(g, from, to, 'результаты измерения', 0)
+      const r = res != null ? findRow(g, res + 1, to, 'u, кв', 0) : null
+      if (r != null) for (const c of valueCols(g, r, 1, true)) emit('kv', r, c, 'кВ')
+    },
+  },
   { title: 'шум', parse: belowLabels('ct_noise', 'среднее квадратическое отклонение', 'HU') },
   { title: 'среднее число кт-единиц', parse: belowLabels('ct_mean', 'среднее число кт-единиц', 'HU') },
   { title: 'однородность', parse: labelRows('ct_uniformity', 'определяемые значения', 'HU') },
