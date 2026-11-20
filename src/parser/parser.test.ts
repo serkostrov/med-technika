@@ -22,6 +22,7 @@ const FIXTURES_REAL = join(
   'fixtures/real',
 )
 const REAL_DF_22 = join(FIXTURES_REAL, '22-26-ДФ.xlsx')
+const REAL_DF_38 = join(FIXTURES_REAL, '38-26-ДФ.xlsx')
 const REAL_DF =
   '/Users/talininigor/Downloads/29-26-ДФ КОГБУЗ Омутнинская ЦРБ.xlsx'
 const REAL_UHF =
@@ -122,6 +123,27 @@ describe('Эталонные протоколы (App. A)', () => {
       'energy_2_8kv',
       'energy_2_8kv',
       'energy_2_8kv',
+      'interval',
+    ])
+  })
+
+  it('боевой 38-26-ДФ: «1. Дефибриллятор:» в A, модель и зав. № в J; скрытый объект пропущен', () => {
+    const buf = readFileSync(REAL_DF_38)
+    const data = buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength)
+    const parsed = parseProtocol({
+      data,
+      forms: seed.protocolForms,
+      indicatorMaps: seed.formIndicatorMaps,
+    })
+    expect(parsed.parserProfile).toBe('physio-df')
+    expect(parsed.objects).toEqual([
+      { seq: 1, name: 'AXION ДКИ-Н-10', serialNo: 'D3024O0005', year: '2024', department: null },
+    ])
+    // как напечатано: Y — формат «0», интервал — «0.0»
+    expect(parsed.results.map((r) => r.factValue)).toEqual(['10', '24', '48', '71', '97', '145', '218', '300', '346', '7,0'])
+    expect(parsed.results.map((r) => r.sourceKey)).toEqual([
+      ...Array(3).fill('energy_le2kv'),
+      ...Array(6).fill('energy_2_8kv'),
       'interval',
     ])
   })

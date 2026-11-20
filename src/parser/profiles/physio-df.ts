@@ -18,6 +18,20 @@ const OBJECT_RE =
 type BlockKey = 'energy_le2kv' | 'energy_2_8kv' | 'interval'
 
 /**
+ * Строка объекта: «Дефибриллятор: …» целиком в A или «1. Дефибриллятор:» в A,
+ * а модель / зав. № / год — в первой заполненной ячейке правее (38-26-ДФ, J).
+ */
+function objectLine(grid: SheetGrid, r: number): string {
+  const a = cellText(grid, r, COL.A)
+  if (!/^(?:\d+\.\s*)?Дефибриллятор:\s*$/i.test(a.trim())) return a
+  for (let c = COL.A + 1; c < COL.BB; c++) {
+    const t = cellText(grid, r, c).trim()
+    if (t) return `${a.trim()} ${t}`
+  }
+  return a
+}
+
+/**
  * Заголовок блока в реальных протоколах лежит в Y (merged A…X / Y…AK),
  * в упрощённых фикстурах — в A. Смотрим обе колонки.
  */
@@ -75,14 +89,14 @@ export function parsePhysioDf(
     if (block) {
       currentBlock = block
       // объект может стоять строкой выше заголовка блока (боевые шаблоны ДФ)
-      if (!a || !OBJECT_RE.test(a)) continue
+      if (!a || !OBJECT_RE.test(objectLine(grid, r))) continue
     }
 
     if (!a) continue
 
-    const obj = OBJECT_RE.exec(a)
+    const obj = OBJECT_RE.exec(objectLine(grid, r))
     if (obj) {
-      const prev = cellText(grid, r - 1, COL.A)
+      const prev = objectLine(grid, r - 1)
       // отделение — отдельная строка выше; не путать с строкой измерения (BB–BE)
       if (
         prev &&
