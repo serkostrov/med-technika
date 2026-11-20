@@ -44,13 +44,19 @@ export const OBJECT_INFO_SEQUENCE = [
   'AnotherDoc',
 ] as const
 
+/** Порядок дочерних элементов ResearchObjectInfo (официальный XSD). */
 export const RESEARCH_INFO_SEQUENCE = [
   'IndicatorId',
   'UniqueIndicator',
   'Directory',
   'FactValue',
   'MeasurementId',
+  'UniqueMeasurement',
   'DocNameId',
   'UniqueMethod',
   'DocNameMethodikId',
+  'UniqueMethodik',
 ] as const
+
+/** Обязательные в ResearchObjectInfo (остальные — minOccurs="0"). */
+export const RESEARCH_INFO_REQUIRED = ['FactValue'] as const

@@ -117,3 +117,31 @@ const EXPECTED_FACTS: Record<'uhf' | 'mt' | 'df', string[]> = {
   mt: ['5,09', '10,34', '25,13', '48,83', '92,47'],
   df: ['7', '21', '39', '70', '119', '163', '197', '222', '280', '9,4'],
 }
+
+describe('валидатор XSD: ResearchObjectInfo', () => {
+  const pkg = (infos: string) =>
+    REFERENCE_XML.uhf.replace(
+      /<ResearchObject>[\s\S]*?<\/ResearchObject>/,
+      `<ResearchObject>${infos}</ResearchObject>`,
+    )
+  const errorsOf = (xml: string) => {
+    const r = validateAgainstFgisXsd(xml)
+    return r.ok ? [] : r.errors.filter((e) => e.includes('ResearchObjectInfo'))
+  }
+
+  it('текстовая единица (UniqueMeasurement, без MeasurementId) — допустима (427 / 439-26-ЭП)', () => {
+    expect(
+      errorsOf(pkg(
+        '<ResearchObjectInfo><IndicatorId>137689</IndicatorId><UniqueIndicator></UniqueIndicator>' +
+          '<Directory>DM-55254</Directory><FactValue>наличие</FactValue>' +
+          '<UniqueMeasurement>наличие/отсутствие</UniqueMeasurement>' +
+          '<UniqueMethod>ГОСТ Р МЭК 60601-1-3-2013, п.6.4.2</UniqueMethod><DocNameMethodikId>1140</DocNameMethodikId></ResearchObjectInfo>',
+      )),
+    ).toEqual([])
+  })
+
+  it('нарушенный порядок и отсутствие FactValue — ошибки', () => {
+    expect(errorsOf(pkg('<ResearchObjectInfo><FactValue>1</FactValue><IndicatorId>1</IndicatorId></ResearchObjectInfo>'))).toHaveLength(1)
+    expect(errorsOf(pkg('<ResearchObjectInfo><IndicatorId>1</IndicatorId></ResearchObjectInfo>'))).toHaveLength(1)
+  })
+})

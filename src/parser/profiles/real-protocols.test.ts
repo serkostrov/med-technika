@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { FormStatus } from '@/domain'
 import { createSeedBundle } from '@/data/seed'
 import { parseProtocol, ParseError } from '@/parser'
+import { validateAgainstFgisXsd } from '@/fgis-xml/validate-xsd'
 import {
   adjustReference,
   buildRealProtocolXml,
@@ -156,6 +157,9 @@ describe('боевые протоколы лаборатории → XML = эт�
     expect(built.resultsTotal).toBe(results)
     expect(built.resultsWithOa).toBe(results)
     expect(built.unitErrors).toEqual([])
+    // встроенный валидатор XSD при выгрузке (UniqueMeasurement — 427 / 439-26-ЭП)
+    const xsd = validateAgainstFgisXsd(built.xml)
+    expect(xsd.ok ? [] : xsd.errors).toEqual([])
     const reference = adjust
       ? adjustReference(realReferenceXml(name), adjust)
       : realReferenceXml(name)

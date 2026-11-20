@@ -1,6 +1,7 @@
 import {
   OBJECT_INFO_SEQUENCE,
   PROTOCOL_CHILD_SEQUENCE,
+  RESEARCH_INFO_REQUIRED,
   RESEARCH_INFO_SEQUENCE,
 } from './xsd/schema'
 
@@ -121,7 +122,7 @@ function validateObjectInfo(
   ]
   for (let r = 0; r < researches.length; r++) {
     const names = topLevelChildNames(researches[r]![1]!)
-    if (!sequenceMatches(names, [...RESEARCH_INFO_SEQUENCE])) {
+    if (!orderedSubset(names, RESEARCH_INFO_SEQUENCE, RESEARCH_INFO_REQUIRED)) {
       errors.push(
         `protocol[${protocolIndex}] ObjectInfo[${objectIndex}] ` +
           `ResearchObjectInfo[${r + 1}]: нарушен sequence ` +
@@ -151,6 +152,21 @@ function topLevelChildNames(xmlFragment: string): string[] {
     depth += 1
   }
   return names
+}
+
+/** Элементы — в порядке sequence, без повторов; необязательные (minOccurs=0) можно опустить. */
+function orderedSubset(
+  actual: string[],
+  sequence: readonly string[],
+  required: readonly string[],
+): boolean {
+  let prev = -1
+  for (const name of actual) {
+    const i = sequence.indexOf(name)
+    if (i <= prev) return false
+    prev = i
+  }
+  return required.every((name) => actual.includes(name))
 }
 
 function sequenceMatches(actual: string[], expected: string[]): boolean {
